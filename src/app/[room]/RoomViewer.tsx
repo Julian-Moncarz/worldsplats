@@ -77,9 +77,15 @@ function ExitHint({ active }: { active: boolean }) {
   const { isLocked } = usePointerLock();
   if (!active || !isLocked) return null;
   return (
-    <div className="absolute left-1/2 bottom-24 z-20 -translate-x-1/2 pointer-events-none">
-      <div className="rounded-md border border-white/15 bg-black/70 px-4 py-2 text-sm text-white backdrop-blur">
-        Press <span className="font-bold text-amber-300">E</span>
+    <div className="absolute left-1/2 bottom-24 z-20 -translate-x-1/2 pointer-events-none select-none">
+      {/* Sharp-edged diegetic HUD prompt: a keycap glyph + tracked label. */}
+      <div className="flex items-center gap-2.5 border border-white/20 bg-black/75 px-4 py-2.5 backdrop-blur-sm shadow-[0_2px_24px_rgba(0,0,0,0.6)]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/70">
+          Press
+        </span>
+        <kbd className="grid h-7 min-w-[1.75rem] place-items-center border-2 border-amber-300 bg-amber-300/10 px-1.5 font-mono text-base font-bold uppercase leading-none text-amber-300 shadow-[inset_0_-2px_0_rgba(252,211,77,0.45)]">
+          E
+        </kbd>
       </div>
     </div>
   );

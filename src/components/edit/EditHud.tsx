@@ -45,7 +45,8 @@ export default function EditHud({ currentWorldId }: { currentWorldId: string }) 
       <div className="select-text text-zinc-100">{text}</div>
       <div className="text-zinc-400">
         <span className="text-amber-300">C</span> copy pos+yaw (spawn / door) ·{' '}
-        <span className="text-amber-300">B</span> beam-copy look point (artifact)
+        <span className="text-amber-300">B</span> beam-copy + drop orb (artifact) ·{' '}
+        <span className="text-amber-300">X</span> clear orbs
       </div>
       {lastCopied && (
         <div className="select-text text-emerald-300">copied → {lastCopied}</div>

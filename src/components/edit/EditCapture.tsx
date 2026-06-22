@@ -7,8 +7,10 @@
 //   B  "beam": raycast from the camera and copy the hit point — for artifacts,
 //      including ones above/below eye level. Cast against the Rapier collider
 //      (the actual collision geometry) since a Gaussian-splat cloud isn't raycastable.
+//      Each hit also drops a red orb in the scene so you can see what you marked.
+//   X  clear the dropped orbs.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useRapierWorld } from '@/physics';
@@ -20,6 +22,7 @@ export default function EditCapture() {
   const { camera } = useThree();
   const { world, rapier, playerBody } = useRapierWorld();
   const { editMode, liveRef, setLastCopied } = useEdit();
+  const [beamHits, setBeamHits] = useState<[number, number, number][]>([]);
 
   // Feed live values to the HUD.
   useFrame(() => {
@@ -79,7 +82,11 @@ export default function EditCapture() {
           y: origin.y + dir.y * hit.toi,
           z: origin.z + dir.z * hit.toi,
         };
+        setBeamHits((prev) => [...prev, [hp.x, hp.y, hp.z]]);
         void copy(`pos:[${f2(hp.x)},${f2(hp.y)},${f2(hp.z)}]`);
+      } else if (e.code === 'KeyX') {
+        setBeamHits([]);
+        setLastCopied('cleared beam markers');
       }
     };
 
@@ -87,5 +94,16 @@ export default function EditCapture() {
     return () => window.removeEventListener('keydown', onKey);
   }, [editMode, camera, world, rapier, playerBody, setLastCopied]);
 
-  return null;
+  if (!editMode) return null;
+
+  return (
+    <>
+      {beamHits.map((p, i) => (
+        <mesh key={i} position={p} renderOrder={999}>
+          <sphereGeometry args={[0.08, 16, 16]} />
+          <meshBasicMaterial color="#ff2d2d" toneMapped={false} depthTest={false} transparent opacity={0.95} />
+        </mesh>
+      ))}
+    </>
+  );
 }

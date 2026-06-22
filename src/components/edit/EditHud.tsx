@@ -41,7 +41,7 @@ export default function EditHud({ roomName }: { roomName: string }) {
       </div>
       <div className="select-text text-zinc-100">{text}</div>
       <div className="text-zinc-400">
-        <span className="text-amber-300">C</span> copy pos+yaw (spawn / door) ·{' '}
+        <span className="text-amber-300">C</span> copy spawn (snaps to floor) ·{' '}
         <span className="text-amber-300">B</span> beam-copy + drop orb (artifact) ·{' '}
         <span className="text-amber-300">X</span> clear orbs
       </div>

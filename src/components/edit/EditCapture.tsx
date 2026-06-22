@@ -15,8 +15,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useRapierWorld } from '@/physics';
 import { useEdit } from '@/providers/edit';
+import { CONFIG as UNIVERSE_CONFIG } from '@/data/universeconfig';
 
 const f2 = (n: number) => Number(n.toFixed(2));
+// Body-center height above the feet (so a copied spawn lands feet-on-floor).
+const STAND = UNIVERSE_CONFIG.PLAYER.HALF_HEIGHT + UNIVERSE_CONFIG.PLAYER.RADIUS;
 
 export default function EditCapture() {
   const { camera } = useThree();
@@ -43,13 +46,13 @@ export default function EditCapture() {
   useEffect(() => {
     if (!editMode) return;
 
-    const copy = async (text: string) => {
+    const copy = async (text: string, display?: string) => {
       try {
         await navigator.clipboard.writeText(text);
       } catch {
         // clipboard may be blocked (e.g. not focused); the HUD + console still show it
       }
-      setLastCopied(text);
+      setLastCopied(display ?? text);
       console.log('[edit] copied:', text);
     };
 
@@ -63,7 +66,19 @@ export default function EditCapture() {
         const fwd = new THREE.Vector3();
         camera.getWorldDirection(fwd).normalize();
         const yaw = (Math.atan2(fwd.x, fwd.z) * 180) / Math.PI;
-        void copy(`pos:[${f2(p.x)},${f2(p.y)},${f2(p.z)}], yaw:${f2(yaw)}`);
+        // Snap to the floor directly below: record the feet-on-floor standing
+        // body-center height, so a copied spawn is always valid regardless of how
+        // high you're flying in specter mode. (No floor below → keep raw + warn.)
+        let y = p.y;
+        let warn = '';
+        if (world && rapier) {
+          const down = new rapier.Ray({ x: p.x, y: p.y, z: p.z }, { x: 0, y: -1, z: 0 });
+          const hit = world.castRay(down, 1000, true, undefined, undefined, undefined, playerBody ?? undefined);
+          if (hit) y = p.y - hit.toi + STAND;
+          else warn = '  ⚠ no floor below — raw height';
+        }
+        const text = `pos:[${f2(p.x)},${f2(y)},${f2(p.z)}], yaw:${f2(yaw)}`;
+        void copy(text, text + warn);
       } else if (e.code === 'KeyB') {
         if (!world || !rapier) return;
         const origin = camera.getWorldPosition(new THREE.Vector3());

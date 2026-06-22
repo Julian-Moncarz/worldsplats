@@ -21,14 +21,17 @@ import {
   entrywayIdFromHash,
   type Room,
   type Exit,
+  type Artifact,
 } from '@/data/room';
 import { roomToWorldDef } from '@/data/presets';
 import { Reticle } from '@/components/hud/ClickToPlay';
 import { IconButton } from '@/components/hud/Button';
+import ContentOverlay from '@/components/hud/ContentOverlay';
 import MobileHud from '@/components/controls/MobileHud';
 
 const MOVE_SPEED = 14;
 const EMPTY_EXITS: Exit[] = [];
+const EMPTY_ARTIFACTS: Artifact[] = [];
 
 type Spawn = { pos: [number, number, number]; yaw: number; key: string } | null;
 
@@ -137,6 +140,8 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | undefined>();
   const [exitActive, setExitActive] = useState(false);
+  const [artifactActive, setArtifactActive] = useState(false);
+  const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
   const mobileInputRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const { setMusic } = useAudio();
 
@@ -168,6 +173,8 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
   // SplatWorld's load effect (and the collider build) re-fire every render.
   const world = React.useMemo(() => (room ? roomToWorldDef(roomId, room) : null), [room, roomId]);
   const exits = room?.exits ?? EMPTY_EXITS;
+  const artifacts = room?.artifacts ?? EMPTY_ARTIFACTS;
+  const onArtifactOpen = useCallback((url: string) => setOverlayUrl(url), []);
 
   // Follow an exit's link. Same-origin links navigate client-side (smooth room
   // swap); other origins do a full navigation (cross-museum). Dead links 404 —
@@ -229,6 +236,9 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
           exits={exits}
           onExit={onExit}
           onActiveExitChange={setExitActive}
+          artifacts={artifacts}
+          onArtifactOpen={onArtifactOpen}
+          onActiveArtifactChange={setArtifactActive}
           spawnYaw={spawn?.yaw}
           spawnKey={spawn?.key}
         />
@@ -236,7 +246,8 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
 
       <ClickToEngage isLoading={isLoading} loadError={loadError} />
       <RootUIOverlays isLoading={isLoading} loadError={loadError} />
-      <ExitHint active={exitActive} />
+      <ExitHint active={exitActive || artifactActive} />
+      {overlayUrl && <ContentOverlay url={overlayUrl} onClose={() => setOverlayUrl(null)} />}
 
       <EditHud roomName={world.name} />
       <MobileHud mobileInputRef={mobileInputRef} />

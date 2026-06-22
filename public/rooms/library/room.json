@@ -12,5 +12,7 @@
   "exits": [
     { "pos": [0.93, -0.18, 0.46], "radius": 1.3, "to": "../study/#from-library" }
   ],
-  "artifacts": []
+  "artifacts": [
+    { "id": "lamp", "pos": [0.03, -0.4, -1.44], "radius": 2.0, "url": "https://julian.dance" }
+  ]
 }

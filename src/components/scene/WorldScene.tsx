@@ -10,8 +10,9 @@ import PointerLockBridge from '@/components/scene/PointerLockBridge';
 import TouchLookController from '@/components/controls/TouchLookController';
 import EditCapture from '@/components/edit/EditCapture';
 import Exits from '@/components/scene/Exits';
+import ArtifactsLayer from '@/components/scene/Artifacts';
 import type { WorldDef } from '@/data/presets';
-import type { Exit } from '@/data/room';
+import type { Exit, Artifact } from '@/data/room';
 
 type Props = {
   world: WorldDef;
@@ -21,6 +22,9 @@ type Props = {
   exits?: Exit[];
   onExit?: (to: string) => void;
   onActiveExitChange?: (active: boolean) => void;
+  artifacts?: Artifact[];
+  onArtifactOpen?: (url: string) => void;
+  onActiveArtifactChange?: (active: boolean) => void;
   spawnYaw?: number;
   spawnKey?: string;
 };
@@ -33,6 +37,9 @@ function SceneInner({
   exits,
   onExit,
   onActiveExitChange,
+  artifacts,
+  onArtifactOpen,
+  onActiveArtifactChange,
   spawnYaw,
   spawnKey }: Props) {
   const localMobileInputRef = useRef<{x:number;y:number}>({x:0,y:0});
@@ -61,6 +68,15 @@ function SceneInner({
           exits={exits}
           onExit={onExit}
           onActiveChange={onActiveExitChange ?? (() => {})}
+        />
+      )}
+
+      {/* Artifacts → open a web URL in an overlay */}
+      {artifacts && onArtifactOpen && (
+        <ArtifactsLayer
+          artifacts={artifacts}
+          onOpen={onArtifactOpen}
+          onActiveChange={onActiveArtifactChange ?? (() => {})}
         />
       )}
 
@@ -93,6 +109,9 @@ export default function WorldScene({
   exits,
   onExit,
   onActiveExitChange,
+  artifacts,
+  onArtifactOpen,
+  onActiveArtifactChange,
   spawnYaw,
   spawnKey }: Props) {
   const handleLoadingChange = useCallback((loading: boolean, error?: string) => {
@@ -131,6 +150,9 @@ export default function WorldScene({
         exits={exits}
         onExit={onExit}
         onActiveExitChange={onActiveExitChange}
+        artifacts={artifacts}
+        onArtifactOpen={onArtifactOpen}
+        onActiveArtifactChange={onActiveArtifactChange}
         spawnYaw={spawnYaw}
         spawnKey={spawnKey}
       />

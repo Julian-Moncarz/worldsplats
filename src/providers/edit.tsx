@@ -25,6 +25,15 @@ type EditCtx = {
   lastCopied: string | null;
   setLastCopied: (s: string | null) => void;
   manifest: Manifest | null;
+  /**
+   * Specter (noclip) mode — only meaningful in edit mode. When ON the player
+   * passes through world colliders and flies; toggled with Z. `specterRef`
+   * mirrors the state for per-frame reads inside the canvas (PlayerController),
+   * while `specter` drives React re-renders (the HUD).
+   */
+  specter: boolean;
+  specterRef: React.MutableRefObject<boolean>;
+  toggleSpecter: () => void;
 };
 
 const Ctx = createContext<EditCtx | null>(null);
@@ -34,6 +43,12 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
   const liveRef = useRef<LiveCoords>({ pos: [0, 0, 0], yaw: 0, pitch: 0, hasBody: false });
   const [lastCopied, setLastCopied] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [specter, setSpecter] = useState(false);
+  const specterRef = useRef(false);
+  const toggleSpecter = () => {
+    specterRef.current = !specterRef.current;
+    setSpecter(specterRef.current);
+  };
 
   // Read the edit flag from the URL after mount (avoids SSR hydration mismatch).
   useEffect(() => {
@@ -52,7 +67,7 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ editMode, liveRef, lastCopied, setLastCopied, manifest }}>
+    <Ctx.Provider value={{ editMode, liveRef, lastCopied, setLastCopied, manifest, specter, specterRef, toggleSpecter }}>
       {children}
     </Ctx.Provider>
   );

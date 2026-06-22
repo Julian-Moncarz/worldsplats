@@ -5,6 +5,15 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { usePointerLock } from '@/providers/pointerLock';
 import * as THREE from 'three';
 import { useRapierWorld, RapierRigidBody } from '@/physics';
+import { useEdit } from '@/providers/edit';
+
+// Rapier collision groups are a 32-bit value: high 16 bits = membership,
+// low 16 bits = filter (which groups this collider collides with).
+// NORMAL is Rapier's default (member of all, collides with all). SPECTER keeps
+// membership but clears the filter, so the player collides with nothing —
+// passing through walls. Beams are separate raycasts, so they are unaffected.
+const NORMAL_GROUPS = 0xffffffff;
+const SPECTER_GROUPS = 0x00010000;
 
 type Props = {
   onLockChange?: (locked: boolean) => void;
@@ -32,6 +41,7 @@ export default function PlayerController({
   const { camera } = useThree();
   const { world, rapier, playerBody } = useRapierWorld();
   const { isLocked } = usePointerLock();
+  const { specter, specterRef } = useEdit();
   const bodyRef = useRef<RapierRigidBody | null>(playerBody);
   const key = useRef<Record<string, boolean>>({});
   const jumpRequested = useRef(false);
@@ -44,6 +54,22 @@ export default function PlayerController({
   useEffect(() => {
     bodyRef.current = playerBody;
   }, [playerBody]);
+
+  // Apply specter mode to the player body: clear the collider's collision filter
+  // (pass through everything) and zero gravity (so you hover / fly). Reverting
+  // restores normal collision + gravity. Re-runs when the body is recreated.
+  useEffect(() => {
+    if (!playerBody) return;
+    const collider = playerBody.collider(0);
+    if (specter) {
+      collider?.setCollisionGroups(SPECTER_GROUPS);
+      playerBody.setGravityScale(0, true);
+    } else {
+      collider?.setCollisionGroups(NORMAL_GROUPS);
+      playerBody.setGravityScale(1, true);
+      playerBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  }, [specter, playerBody]);
 
   // Input
   useEffect(() => {
@@ -64,6 +90,10 @@ export default function PlayerController({
       }
       if (e.code === 'Space') {
         jumpRequested.current = true;
+        e.preventDefault();
+      }
+      // Arrows fly up/down in specter mode; stop them scrolling the page either way.
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
         e.preventDefault();
       }
     };
@@ -120,8 +150,14 @@ export default function PlayerController({
       console.warn('[Player] non-finite velocity target', target);
     }
 
-    // Jump only when grounded
-    if (jumpRequested.current && isGrounded()) {
+    if (specterRef.current) {
+      // Specter mode: no gravity, so drive vertical directly with the arrows
+      // (up/down). No key held → 0 → hover in place.
+      const upDir = (key.current['ArrowUp'] ? 1 : 0) - (key.current['ArrowDown'] ? 1 : 0);
+      target.y = upDir * speed;
+      jumpRequested.current = false;
+    } else if (jumpRequested.current && isGrounded()) {
+      // Jump only when grounded
       target.y = jumpSpeed;
       jumpRequested.current = false;
     }

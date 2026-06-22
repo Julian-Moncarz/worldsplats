@@ -21,7 +21,7 @@ const f2 = (n: number) => Number(n.toFixed(2));
 export default function EditCapture() {
   const { camera } = useThree();
   const { world, rapier, playerBody } = useRapierWorld();
-  const { editMode, liveRef, setLastCopied } = useEdit();
+  const { editMode, liveRef, setLastCopied, specterRef, toggleSpecter } = useEdit();
   const [beamHits, setBeamHits] = useState<[number, number, number][]>([]);
 
   // Feed live values to the HUD.
@@ -94,12 +94,17 @@ export default function EditCapture() {
       } else if (e.code === 'KeyX') {
         setBeamHits([]);
         setLastCopied('cleared beam markers');
+      } else if (e.code === 'KeyZ') {
+        // Toggle specter (noclip + fly) mode. The actual physics changes are
+        // applied in PlayerController, which reads specterRef each frame.
+        toggleSpecter();
+        setLastCopied(`spectre: ${specterRef.current ? 'ON' : 'OFF'}`);
       }
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [editMode, camera, world, rapier, playerBody, setLastCopied]);
+  }, [editMode, camera, world, rapier, playerBody, setLastCopied, specterRef, toggleSpecter]);
 
   if (!editMode) return null;
 

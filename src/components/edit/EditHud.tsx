@@ -10,7 +10,7 @@ import { useEdit } from '@/providers/edit';
 const f = (n: number) => n.toFixed(2);
 
 export default function EditHud({ currentWorldId }: { currentWorldId: string }) {
-  const { editMode, liveRef, lastCopied, manifest } = useEdit();
+  const { editMode, liveRef, lastCopied, manifest, specter } = useEdit();
   const [text, setText] = useState('pos:[…], yaw:…');
 
   useEffect(() => {
@@ -47,6 +47,13 @@ export default function EditHud({ currentWorldId }: { currentWorldId: string }) 
         <span className="text-amber-300">C</span> copy pos+yaw (spawn / door) ·{' '}
         <span className="text-amber-300">B</span> beam-copy + drop orb (artifact) ·{' '}
         <span className="text-amber-300">X</span> clear orbs
+      </div>
+      <div className="text-zinc-400">
+        <span className="text-amber-300">Z</span> toggle spectre{' '}
+        <span className={specter ? 'text-emerald-300' : 'text-zinc-500'}>
+          [{specter ? 'ON' : 'OFF'}]
+        </span>
+        {specter && <span className="text-zinc-400"> · <span className="text-amber-300">↑/↓</span> fly</span>}
       </div>
       {lastCopied && (
         <div className="select-text text-emerald-300">copied → {lastCopied}</div>

@@ -80,7 +80,7 @@ function ExitHint({ active }: { active: boolean }) {
     <div className="absolute left-1/2 bottom-24 z-20 -translate-x-1/2 pointer-events-none select-none">
       {/* Sharp-edged retro HUD prompt — monochrome pixel font, keycap glyph. */}
       <div
-        className="flex items-center gap-2 border border-white/60 bg-black/70 px-3 py-1.5 text-white/90 backdrop-blur-sm"
+        className="flex items-center gap-2 bg-black/70 px-3 py-1.5 text-white/90 backdrop-blur-sm"
         style={{ fontFamily: 'var(--font-retro)' }}
       >
         <span className="text-[8px] uppercase leading-none">Press</span>

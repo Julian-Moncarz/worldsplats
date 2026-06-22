@@ -10,7 +10,7 @@
     { "id": "from-study", "pos": [0.93, -0.18, 0.46], "yaw": -134.21 }
   ],
   "exits": [
-    { "pos": [0.02, -0.11, 1.75], "radius": 1.3, "to": "../study/#from-library" }
+    { "pos": [0.93, -0.18, 0.46], "radius": 1.3, "to": "../study/#from-library" }
   ],
   "artifacts": []
 }

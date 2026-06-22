@@ -1,207 +1,123 @@
-# Philc Worlds
+# WorldSplats
 
-A 3D world exploration experience using Gaussian Splatting technology. Navigate through multiple immersive environments with real-time physics and dynamic background music.
+A static, content-free **viewer for walkable Gaussian-splat rooms**. Give it a
+room (a splat + a collider + some coordinates) and it renders a first-person space
+you can walk around. One room = one URL.
 
-Thank you to World Labs for beta access to their world generator, and @bmild for sample code to bootstrap Spark.js with React Three Fiber.
+Thank you to World Labs for beta access to their world generator, and @bmild for
+sample code to bootstrap Spark.js with React Three Fiber.
 
-## Features
+## What it is (and isn't)
 
-- **Gaussian Splat Rendering** - Real-time rendering of photorealistic 3D environments using Spark.js
-- **Multiple Worlds** - 6 unique environments to explore, each with its own atmosphere and music
-- **Dynamic Audio System** - Automatic background music switching with fade transitions
-- **Mobile Support** - Touch controls with virtual joystick for mobile devices
-- **Physics Simulation** - Rapier physics engine for realistic interactions
-- **Responsive UI** - Adaptive interface that works on desktop and mobile
+- **A viewer, not a place.** The renderer's only input is a `room.json` (by URL).
+  It knows nothing about museums, hosting, or how the assets were made.
+- **No manifest, no "museum" object.** A museum is just rooms linked by exits —
+  exactly like the web is pages linked by `href`s. The graph is emergent.
+- **Static.** It builds to plain files and runs with no server — host it on
+  GitHub Pages, Cloudflare R2/Pages, S3, or any folder behind any web server.
 
-## Getting Started
+## The room primitive
 
-### Prerequisites
+A room is a folder with a `room.json` (`public/rooms/<slug>/room.json`):
 
-- Node.js 18+
-- npm, yarn, pnpm, or bun
-
-### Installation
-
-```bash
-npm install
-```
-
-### Development
-
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-### Build
-
-Create an optimized production build:
-
-```bash
-npm run build
-```
-
-Start the production server:
-
-```bash
-npm start
-```
-
-## Controls
-
-### Desktop
-
-- **WASD** - Move camera (forward/left/back/right)
-- **Mouse** - Look around (pointer lock mode)
-- **Q/E or ←/→** - Navigate between worlds
-- **Space** - Shoot projectile (when implemented)
-- **ESC** - Exit pointer lock mode
-
-### Mobile
-
-- **Virtual Joystick** - Move camera (bottom-left)
-- **Touch Drag** - Look around
-- **UI Buttons** - Navigate between worlds
-
-## Audio System
-
-The app features an automatic background music system:
-
-- Each world has its own unique music track
-- Music fades smoothly when switching between worlds
-- Audio is initialized on first user interaction (browser requirement)
-- Mute/unmute toggle available in top-right corner
-- Audio context automatically resumes on mobile Safari
-
-## Project Structure
-
-```
-src/
-├── app/
-│   └── page.tsx                    # Main page with layout and state
-├── components/
-│   ├── scene/
-│   │   ├── WorldScene.tsx          # 3D canvas and scene setup
-│   │   └── PointerLockBridge.tsx   # Pointer lock integration
-│   ├── spark/
-│   │   ├── SparkLayer.tsx          # Spark renderer integration
-│   │   └── SplatWorld.tsx          # Splat file loader
-│   ├── controls/
-│   │   ├── PlayerController.tsx    # WASD camera movement
-│   │   ├── TouchLookController.tsx # Touch-based camera rotation
-│   │   ├── VirtualStick.tsx        # Mobile joystick
-│   │   └── MobileHud.tsx           # Mobile control overlay
-│   ├── hud/
-│   │   ├── NavHeader.tsx           # World navigation UI
-│   │   ├── Button.tsx              # Button components
-│   │   └── ClickToPlay.tsx         # Reticle component
-│   └── environment/
-│       └── Floor.tsx               # Collision floor
-├── providers/
-│   ├── audio.tsx                   # Audio context provider
-│   └── pointerLock.tsx             # Pointer lock provider
-├── data/
-│   └── presets.ts                  # World and object definitions
-├── config/
-│   └── audio.ts                    # Audio configuration
-└── physics/
-    └── RapierProvider.tsx          # Physics context provider
-```
-
-## Tech Stack
-
-- **Next.js 15** - React framework with Turbopack
-- **React 19** - UI library
-- **Three.js** - 3D graphics library
-- **@react-three/fiber** - React renderer for Three.js
-- **@react-three/rapier** - Physics engine integration
-- **@sparkjsdev/spark** - Gaussian Splatting renderer
-- **Tailwind CSS** - Utility-first CSS framework
-- **TypeScript** - Type-safe JavaScript
-
-## Architecture
-
-### Audio System
-
-The audio system uses React Context to provide a singleton AudioContext:
-
-- `AudioProvider` manages audio state and playback
-- Buffer caching for efficient loading
-- Automatic music switching based on current world
-- Support for queuing music before user interaction
-- Master gain node for mute/unmute control
-
-### Layout
-
-The layout uses a layered approach:
-
-1. **3D Canvas** (background layer) - Fills entire viewport for immersive exploration
-2. **Overlay UI** (top layer) - Positioned at top center with pointer-events management
-3. **Mobile Controls** (overlay layer) - Virtual joystick and buttons
-4. **HUD Elements** - Reticle, mute button, loading states
-
-### Mobile Support
-
-Touch controls are implemented separately from pointer lock:
-
-- `TouchLookController` - Touch-based camera rotation
-- `VirtualStick` - On-screen joystick for movement
-- `MobileHud` - Container for mobile-specific UI
-- Touch-action CSS prevents page scrolling during gameplay
-
-## Configuration
-
-### Adding New Worlds
-
-1. Add `.spz` or `.ply` file to `/public/worlds/`
-2. Add preview image to `/public/worlds/`
-3. Add music file to `/public/music/`
-4. Update `src/data/presets.ts`:
-
-```typescript
+```jsonc
 {
-  id: 'my-world',
-  name: 'My World',
-  url: '/worlds/myworld.spz',
-  imageUrl: '/worlds/myworld.jpg',
-  musicUrl: '/music/myworld.mp3',
-  position: [0, 0, 0],
-  quaternion: [0, 0, 0, 1],
-  scale: [1, 1, 1],
-  guide: 'Description of your world...',
-  imageCredit: 'Photo credit (optional)'
+  "display_name": "Library",
+  "splat_url":    "library.spz",            // resolved RELATIVE to this file...
+  "collider_url": "library_collider.glb",   // ...so assets can live anywhere
+  "music_url":    "library.mp3",
+  "calibration":  { "scale": 1.0 },         // Marble's scale is arbitrary
+  "entryways": [
+    { "id": "default",    "pos": [0.9, -0.2, 0.5], "yaw": -134 },
+    { "id": "from-study", "pos": [0.0,  0.0, 1.7], "yaw":  180 }
+  ],
+  "exits": [
+    { "pos": [0.0, -0.1, 1.8], "radius": 1.3, "to": "../study/#from-library" }
+  ],
+  "artifacts": []
 }
 ```
 
-## Performance
+- **entryway** — a named, addressable spot you *arrive* at (`id`, `pos`, `yaw`).
+  The URL fragment picks it (`/library/#from-study`); `default` is used when
+  there's no fragment.
+- **exit** — a spot you walk up to and press **E** to follow a link. `to` is a
+  room URL + `#entryway`: relative within a site (`../study/#from-library`),
+  absolute across sites (`https://alice.example/atrium/#east`). Dead links 404 —
+  acceptable by design.
+- **artifact** — walk up + interact to open a web URL in an overlay (no travel).
+- **assets are URL-agnostic.** Every asset URL is resolved *relative to the
+  room.json's own URL*, so assets can sit next to it, live on object storage
+  (R2/S3), or point at the World Labs CDN. The viewer never cares where bytes are.
 
-- Mobile DPR capped at 1.0 for better performance
-- Desktop DPR capped at 1.5
-- Antialiasing disabled for splat rendering
-- Audio buffers cached to avoid re-downloading
-- Passive event listeners for touch events
+## URLs
 
-## Browser Support
+- `/<room>/` renders `public/rooms/<room>/room.json`.
+- `/<room>/#<entryway>` spawns you at that entryway.
+- Exits navigate between rooms (client-side same-origin; a full navigation for a
+  different origin / another museum).
 
-- Modern browsers with WebGL 2.0 support
-- Pointer Lock API (desktop)
-- Web Audio API
-- Touch Events API (mobile)
-- iOS Safari with motion permission handling
+## Controls
 
-## Contributing
+**Desktop:** WASD to move, mouse to look, **E** to use an exit, mute (top-right),
+Esc to release the mouse. The first click or keypress engages look + audio
+(browsers require a gesture). **Mobile:** virtual joystick + touch-drag to look.
 
-This is a personal project, but feel free to fork and adapt for your own use.
+## Develop & build
+
+```bash
+npm install
+npm run dev      # http://localhost:3000  (root redirects to the landing room)
+npm run edit     # dev server with edit mode ON (authoring — see below)
+npm run build    # static export to ./out — deploy anywhere
+```
+
+`out/` is a plain static site: one shared `_next` bundle plus a tiny
+`/<room>/index.html` per room. Drop it on any static host.
+
+## Edit mode (authoring)
+
+Run `npm run edit` (sets `NEXT_PUBLIC_EDIT_MODE=1`). Edit mode is a property of the
+**running instance**, not the URL — so a published build has no edit mode and a
+visitor can't turn it on. It writes nothing; it just helps you read off
+coordinates:
+
+- **C** — copy a spawn (`pos` + `yaw`). It raycasts to the floor below you, so the
+  copied height is always a valid feet-on-floor spawn. Paste it into an entryway.
+- **B** — "beam": copy the point you're looking at (for artifacts, off the floor).
+- **Z** — toggle *specter* mode: no-clip fly (↑/↓ for up/down) so you can reach
+  any spot to mark it.
+- A HUD shows your live `pos`/`yaw` and the last value copied.
+
+## Adding a room
+
+1. Put the assets where they'll be served (object storage like R2 is recommended
+   for the big `.spz`/`.glb`; or colocate them in the room folder).
+2. Create `public/rooms/<slug>/room.json` (format above). Mark entryways/exits in
+   edit mode (`npm run edit`, fly with Z, copy with C).
+3. `npm run build` → `/<slug>/` is live. Link to it from another room's exit.
+
+## Hosting & repo size
+
+Keep **text in git** (room.json + the one shared bundle) and **blobs in object
+storage**. A `.spz` is ~5MB and a collider ~5MB; those belong on R2 (cheap, zero
+egress, CDN-backed), referenced by URL from `room.json`. Adding a room then costs
+your repo a few KB, not 10MB. (GitHub Pages also handles the files fine directly —
+100MB/file limit — if you'd rather commit them.)
+
+## Tech stack
+
+- **Next.js 15** (static export) · **React 19** · **TypeScript**
+- **three.js** + **@react-three/fiber** — 3D
+- **@sparkjsdev/spark** — Gaussian-splat rendering
+- **@dimforge/rapier3d-compat** — physics (capsule player vs. trimesh collider)
+- **Tailwind CSS**
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
-- Gaussian Splatting technology via [Spark.js](https://sparkjs.dev)
-- Demo worlds from Spark.js examples
-- Music tracks (see individual world credits in app)
+- Gaussian Splatting via [Spark.js](https://sparkjs.dev)
+- World generation via [World Labs Marble](https://marble.worldlabs.ai)

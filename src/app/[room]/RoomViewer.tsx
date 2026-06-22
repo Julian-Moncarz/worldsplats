@@ -286,6 +286,9 @@ export default function RoomViewer() {
           if (cancelled) return;
           void fetch(neighbor.splat_url).catch(() => {});
           void fetch(neighbor.collider_url).catch(() => {});
+          // Warm the music too, so the cross-fade on arrival starts immediately
+          // instead of after a first-visit fetch.
+          if (neighbor.music_url) void fetch(neighbor.music_url).catch(() => {});
         } catch { /* missing/dead room — skip */ }
       }
     })();
@@ -313,9 +316,15 @@ export default function RoomViewer() {
     }
   }, [router]);
 
-  // Switch music when the room changes.
+  // Switch music when the room changes — a long cross-fade so the old room's
+  // track ebbs out as the new one swells in, matching the visual doorway blink
+  // (setMusic overlaps the two tracks over fadeMs). world (hence musicUrl) flips
+  // at the swap, i.e. under the black, so the music turns over with the world.
+  const MUSIC_CROSSFADE_MS = 900;
   const musicUrl = world?.musicUrl;
-  useEffect(() => { if (musicUrl) setMusic(musicUrl); }, [musicUrl, setMusic]);
+  useEffect(() => {
+    if (musicUrl) setMusic(musicUrl, { fadeMs: MUSIC_CROSSFADE_MS });
+  }, [musicUrl, setMusic]);
 
   const handleLoadingChange = (loading: boolean, error?: string) => {
     setIsLoading(loading);

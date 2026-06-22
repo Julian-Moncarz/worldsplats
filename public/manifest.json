@@ -15,9 +15,27 @@
       },
       "calibration": { "scale": 1.0 },
       "default_spawn": { "pos": [0, 1.6, 0], "yaw": 0 },
-      "exits": [],
+      "exits": [
+        { "vol": { "pos": [0.02, -0.11, 1.75], "radius": 1.3 }, "yaw": -179.89, "to": "library" }
+      ],
       "content_triggers": [],
       "music_url": "/music/Sunset_Focus.mp3"
+    },
+    "library": {
+      "display_name": "Library",
+      "assets": {
+        "splat_url": "/worlds/library.spz",
+        "collider_url": "/worlds/library_collider.glb",
+        "pano_url": "/worlds/library_pano.png",
+        "thumbnail_url": "/worlds/library_thumb.webp"
+      },
+      "calibration": { "scale": 1.0 },
+      "default_spawn": { "pos": [0.02, -0.11, 1.75], "yaw": -179.89 },
+      "exits": [
+        { "vol": { "pos": [0.02, -0.11, 1.75], "radius": 1.3 }, "yaw": -179.89, "to": "study-room" }
+      ],
+      "content_triggers": [],
+      "music_url": "/music/Sunlit_Grove_Ambient.mp3"
     }
   }
 }

@@ -48,6 +48,18 @@ export const WORLDS: WorldDef[] = [
     scale: 1,
     guide: 'Our first Marble-generated room: a cozy enclosed study with a wooden desk, bookshelves, and warm lamp light. Generated via the Marble API (marble-1.0-draft) for step one of the build.',
   },
+  {
+    id: 'library',
+    name: 'Library (our 2nd Marble room)',
+    url: '/worlds/library.spz',
+    colliderUrl: '/worlds/library_collider.glb',
+    imageUrl: '/worlds/library_thumb.webp',
+    musicUrl: '/music/Sunlit_Grove_Ambient.mp3',
+    position: [0, 0, 0],
+    quaternion: [1, 0, 0, 0],
+    scale: 1,
+    guide: 'Our second Marble-generated room: a cozy enclosed library with floor-to-ceiling bookshelves, a reading armchair, and warm lamp light. Connected to the study by a door (step 3).',
+  },
   // {
   //   id: 'butterfly',
   //   name: 'Butterfly (Spark demo)',

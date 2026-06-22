@@ -11,7 +11,9 @@ import PlayerController from '@/components/controls/PlayerController';
 import PointerLockBridge from '@/components/scene/PointerLockBridge';
 import TouchLookController from '@/components/controls/TouchLookController';
 import EditCapture from '@/components/edit/EditCapture';
+import DoorCrossing from '@/components/scene/DoorCrossing';
 import type { WorldDef, ObjectDef } from '@/data/presets';
+import type { Exit } from '@/data/manifest';
 
 export type ShootHandle = {
   shoot: () => void;
@@ -26,6 +28,8 @@ type Props = {
   playerMoveSpeed?: number;
   onLoadingChange?: (isLoading: boolean, error?: string) => void;
   mobileInputRef?: React.MutableRefObject<{x:number;y:number}>;
+  exits?: Exit[];
+  onCross?: (to: string) => void;
 };
 
 type Spawned = {
@@ -43,7 +47,9 @@ function SceneInner({
   projectileSpeed = 18,
   playerMoveSpeed,
   onLoadingChange,
-  mobileInputRef }: Props) {
+  mobileInputRef,
+  exits,
+  onCross }: Props) {
   const { camera } = useThree();
   const [spawned, setSpawned] = useState<Spawned[]>([]);
   const speedRef = useRef(projectileSpeed);
@@ -93,6 +99,9 @@ function SceneInner({
       {/* Edit-mode marking capture (no-op unless ?edit=1) */}
       <EditCapture />
 
+      {/* Door crossings between manifest rooms */}
+      {exits && onCross && <DoorCrossing exits={exits} onCross={onCross} />}
+
       {/* Touch-based camera look for mobile */}
       <TouchLookController />
 
@@ -130,7 +139,9 @@ export default function WorldScene({
   projectileSpeed,
   playerMoveSpeed,
   onLoadingChange,
-  mobileInputRef }: Props) {
+  mobileInputRef,
+  exits,
+  onCross }: Props) {
   const handleLoadingChange = useCallback((loading: boolean, error?: string) => {
     onLoadingChange?.(loading, error);
   }, [onLoadingChange]);
@@ -181,6 +192,8 @@ export default function WorldScene({
         playerMoveSpeed={playerMoveSpeed}
         onLoadingChange={handleLoadingChange}
         mobileInputRef={mobileInputRef}
+        exits={exits}
+        onCross={onCross}
       />
     </Canvas>
     </div>

@@ -8,8 +8,9 @@ import { Spinner, VolumeMaxLine, VolumeXLine, HomeLine } from "@/icons";
 import WorldScene from "@/components/scene/WorldScene";
 import { PointerLockProvider, usePointerLock } from '@/providers/pointerLock';
 import { AudioProvider, useAudio } from '@/providers/audio';
-import { EditProvider } from '@/providers/edit';
+import { EditProvider, useEdit } from '@/providers/edit';
 import EditHud from '@/components/edit/EditHud';
+import type { Exit } from '@/data/manifest';
 //const WorldScene = dynamic(() => import('@/components/scene/WorldScene'), { ssr: false });
 type ShootHandle = { shoot: () => void; clear: () => void; };
 import { WORLDS, OBJECTS, type WorldDef, type ObjectDef } from '@/data/presets';
@@ -188,6 +189,8 @@ const Divider = () => {
   );
 };
 
+const EMPTY_EXITS: Exit[] = [];
+
 function PageContent() {
   const [world, setWorld] = useState<WorldDef>(WORLDS[0]);
   const [object, setObject] = useState<ObjectDef>(OBJECTS[0]);
@@ -197,6 +200,18 @@ function PageContent() {
   const shootRef = useRef<ShootHandle | null>(null);
   const mobileInputRef = useRef<{x:number;y:number}>({x:0,y:0});
   const { setMusic } = useAudio();
+  const { manifest } = useEdit();
+
+  // The current room's doors (from the manifest), and the handler that walks
+  // you through one into the target room.
+  const currentExits = React.useMemo(
+    () => manifest?.rooms[world.id]?.exits ?? EMPTY_EXITS,
+    [manifest, world.id],
+  );
+  const goToRoom = React.useCallback((to: string) => {
+    const next = WORLDS.find((w) => w.id === to);
+    if (next) setWorld(next);
+  }, []);
 
   // Return current index of world in WORLDS
   const currentIndex = WORLDS.findIndex((w) => w.id === world.id);
@@ -239,6 +254,8 @@ function PageContent() {
           playerMoveSpeed={speed}
           onLoadingChange={handleLoadingChange}
           mobileInputRef={mobileInputRef}
+          exits={currentExits}
+          onCross={goToRoom}
         />
       </RapierProvider>
 

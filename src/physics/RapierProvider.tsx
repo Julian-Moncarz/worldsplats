@@ -17,6 +17,59 @@ const Ctx = createContext<RapierCtx>({ rapier: null, world: null, playerBody: nu
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
 
+// Find a clear, stand-able floor spot near the room's center, so we don't drop
+// the player inside a wall or a bookshelf. For a grid of candidate (x,z) points
+// (center first), cast a ray straight down from mid-height (inside the room,
+// below any ceiling) to find the floor, then cast up to require player-height
+// headroom. Returns the valid spot nearest the center, or null if none.
+function findValidSpawn(
+  world: RAPIER.World,
+  rapier: typeof RAPIER,
+  aabb: THREE.Box3,
+  RADIUS: number,
+  HALF_HEIGHT: number,
+  excludeBody: RAPIER.RigidBody | null,
+): { x: number; y: number; z: number } | null {
+  const cx = (aabb.min.x + aabb.max.x) / 2;
+  const cz = (aabb.min.z + aabb.max.z) / 2;
+  const midY = (aabb.min.y + aabb.max.y) / 2;
+  const stand = HALF_HEIGHT + RADIUS;            // body-center height above feet
+  const playerH = 2 * HALF_HEIGHT + 2 * RADIUS;  // approx full capsule height
+  const downMax = midY - aabb.min.y + 1;
+  const exclude = excludeBody ?? undefined;
+
+  const cand: Array<[number, number]> = [[cx, cz]];
+  const N = 5;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const fx = (i + 0.5) / N;
+      const fz = (j + 0.5) / N;
+      cand.push([
+        aabb.min.x + fx * (aabb.max.x - aabb.min.x),
+        aabb.min.z + fz * (aabb.max.z - aabb.min.z),
+      ]);
+    }
+  }
+
+  let best: { x: number; y: number; z: number } | null = null;
+  let bestD = Infinity;
+  for (const [x, z] of cand) {
+    const down = new rapier.Ray({ x, y: midY, z }, { x: 0, y: -1, z: 0 });
+    const dh = world.castRay(down, downMax, true, undefined, undefined, undefined, exclude);
+    if (!dh || dh.toi <= 0.001) continue;        // no floor below, or we're in a solid
+    const floorY = midY - dh.toi;
+    const up = new rapier.Ray({ x, y: floorY + 0.1, z }, { x: 0, y: 1, z: 0 });
+    const uh = world.castRay(up, playerH, true, undefined, undefined, undefined, exclude);
+    if (uh && uh.toi < playerH) continue;        // shelf / low ceiling above — not stand-able
+    const d = (x - cx) ** 2 + (z - cz) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = { x, y: floorY + stand + 0.05, z };
+    }
+  }
+  return best;
+}
+
 export function RapierProvider({
   gravity = UNIVERSE_CONFIG.GRAVITY,
   world: worldDef,
@@ -147,11 +200,14 @@ export function RapierProvider({
 
       if (isRoomCollider && !aabb.isEmpty()) {
         const { RADIUS, HALF_HEIGHT } = UNIVERSE_CONFIG.PLAYER;
-        setSpawn({
-          x: (aabb.min.x + aabb.max.x) / 2,
-          y: aabb.min.y + HALF_HEIGHT + RADIUS + 0.4,
-          z: (aabb.min.z + aabb.max.z) / 2,
-        });
+        const found = findValidSpawn(world, rapier, aabb, RADIUS, HALF_HEIGHT, playerBodyRef.current);
+        setSpawn(
+          found ?? {
+            x: (aabb.min.x + aabb.max.x) / 2,
+            y: aabb.min.y + HALF_HEIGHT + RADIUS + 0.4,
+            z: (aabb.min.z + aabb.max.z) / 2,
+          },
+        );
       } else {
         setSpawn(null);
       }

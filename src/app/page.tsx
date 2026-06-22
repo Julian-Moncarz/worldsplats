@@ -13,7 +13,7 @@ import EditHud from '@/components/edit/EditHud';
 import type { Exit } from '@/data/manifest';
 //const WorldScene = dynamic(() => import('@/components/scene/WorldScene'), { ssr: false });
 type ShootHandle = { shoot: () => void; clear: () => void; };
-import { WORLDS, OBJECTS, type WorldDef, type ObjectDef } from '@/data/presets';
+import { OBJECTS, manifestToWorldDefs, type WorldDef, type ObjectDef } from '@/data/presets';
 import { Reticle } from '@/components/hud/ClickToPlay';
 import { IconButton, Button } from '@/components/hud/Button';
 import MobileHud from '@/components/controls/MobileHud';
@@ -21,6 +21,7 @@ import MobileHud from '@/components/controls/MobileHud';
 function OverlayUI({
   world,
   currentIndex,
+  total,
   speed,
   setSpeed,
   onBack,
@@ -30,6 +31,7 @@ function OverlayUI({
 }: {
   world: WorldDef;
   currentIndex: number;
+  total: number;
   speed: number;
   setSpeed: (speed: number) => void;
   onBack: () => void;
@@ -69,7 +71,7 @@ function OverlayUI({
       <div className="p-4 flex-shrink-0">
         <NavHeader
           title={world.name}
-          detail={`${currentIndex + 1} of ${WORLDS.length}`}
+          detail={`${currentIndex + 1} of ${total}`}
           onBack={onBack}
           onForward={onForward}
         />
@@ -192,8 +194,7 @@ const Divider = () => {
 const EMPTY_EXITS: Exit[] = [];
 
 function PageContent() {
-  const [world, setWorld] = useState<WorldDef>(WORLDS[0]);
-  const [object, setObject] = useState<ObjectDef>(OBJECTS[0]);
+  const [object] = useState<ObjectDef>(OBJECTS[0]);
   const [speed, setSpeed] = useState<number>(14);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | undefined>();
@@ -202,46 +203,59 @@ function PageContent() {
   const { setMusic } = useAudio();
   const { manifest } = useEdit();
 
-  // The current room's doors (from the manifest), and the handler that walks
-  // you through one into the target room.
-  const currentExits = React.useMemo(
-    () => manifest?.rooms[world.id]?.exits ?? EMPTY_EXITS,
-    [manifest, world.id],
-  );
-  const goToRoom = React.useCallback((to: string) => {
-    const next = WORLDS.find((w) => w.id === to);
-    if (next) setWorld(next);
-  }, []);
+  // Runtime room list comes entirely from the manifest (start_room first).
+  const worlds = React.useMemo(() => (manifest ? manifestToWorldDefs(manifest) : []), [manifest]);
+  const [worldId, setWorldId] = useState<string | null>(null);
 
-  // Return current index of world in WORLDS
-  const currentIndex = WORLDS.findIndex((w) => w.id === world.id);
-
-  // Switch music when world changes. This is safe before/after init().
+  // Enter the start room once the manifest has loaded.
   React.useEffect(() => {
-    setMusic(world.musicUrl);        // no-op until user clicks play, then it starts
-  }, [world.musicUrl, setMusic]);
+    if (manifest && worldId === null) setWorldId(manifest.world.start_room);
+  }, [manifest, worldId]);
+
+  const world = worlds.find((w) => w.id === worldId) ?? null;
+  const currentIndex = worlds.findIndex((w) => w.id === worldId);
+
+  // The current room's doors, and the handler that walks you into a target room.
+  const currentExits = React.useMemo(
+    () => (worldId && manifest ? manifest.rooms[worldId]?.exits ?? EMPTY_EXITS : EMPTY_EXITS),
+    [manifest, worldId],
+  );
+  const goToRoom = React.useCallback((to: string) => setWorldId(to), []);
+
+  // Switch music when the room changes. Safe before/after audio init().
+  const musicUrl = world?.musicUrl;
+  React.useEffect(() => {
+    if (musicUrl) setMusic(musicUrl);  // no-op until user clicks play, then it starts
+  }, [musicUrl, setMusic]);
 
   const handleBack = () => {
-    if (currentIndex > 0) {
-      setWorld(WORLDS[currentIndex - 1]);
-    } else {
-      setWorld(WORLDS[WORLDS.length - 1]);
-    }
+    if (worlds.length === 0) return;
+    const i = currentIndex < 0 ? 0 : currentIndex;
+    setWorldId(worlds[(i - 1 + worlds.length) % worlds.length].id);
   };
 
   const handleForward = () => {
-    const currentIndex = WORLDS.findIndex((w) => w.id === world.id);
-    if (currentIndex < WORLDS.length - 1) {
-      setWorld(WORLDS[currentIndex + 1]);
-    } else {
-      setWorld(WORLDS[0]);
-    }
+    if (worlds.length === 0) return;
+    const i = currentIndex < 0 ? 0 : currentIndex;
+    setWorldId(worlds[(i + 1) % worlds.length].id);
   };
 
   const handleLoadingChange = (loading: boolean, error?: string) => {
     setIsLoading(loading);
     setLoadError(error);
   };
+
+  // Wait for the manifest before there's a room to show.
+  if (!world) {
+    return (
+      <div className="relative h-dvh w-dvw bg-black text-white font-sans flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Spinner size={32} className="text-white" />
+          <p className="text-sm text-zinc-300">Loading world…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-dvh w-dvw bg-black text-white font-sans">
@@ -265,6 +279,7 @@ function PageContent() {
           <OverlayUI
             world={world}
             currentIndex={currentIndex}
+            total={worlds.length}
             speed={speed}
             setSpeed={setSpeed}
             onBack={handleBack}

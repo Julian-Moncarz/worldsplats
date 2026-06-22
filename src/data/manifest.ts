@@ -4,9 +4,8 @@
 // (no room types): a splat, a collider, a spawn, some doors, some content
 // triggers, and music. See spec.md §5.
 //
-// Step 2 adds the data model + loader/validator. The runtime still browses the
-// WORLDS preset library; the manifest holds the real room-graph data that the
-// door-crossing work (step 3) will consume.
+// The manifest is the single source of the runtime room list and the room graph
+// (loaded here, mapped to the viewer's WorldDef shape in presets.ts).
 
 export type Vec3 = [number, number, number];
 

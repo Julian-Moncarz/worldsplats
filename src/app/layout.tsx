@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Press_Start_2P } from "next/font/google";
 import "@/styles/globals.css";
 import Providers from "./providers";
+import RoomViewer from "./[room]/RoomViewer";
 
 // Classic arcade pixel font for diegetic HUD bits (the exit prompt). Exposed as
 // a CSS variable; next/font self-hosts it at build time, so it ships with the
@@ -25,7 +26,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${retro.variable} antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {/* The viewer lives in the ROOT layout — the only layout that persists
+              across navigations between different /<room>/ values (a layout INSIDE
+              the [room] dynamic segment remounts when the param changes, dropping
+              the <Canvas> and with it pointer lock). Mounted once here, the canvas
+              survives every door, so the mouse stays locked. RoomViewer reads the
+              current room from usePathname() and renders nothing off room routes.
+              `children` is the route's page (a null stub for [room]; the redirect
+              for /). */}
+          <RoomViewer />
+          {children}
+        </Providers>
       </body>
     </html>
   );

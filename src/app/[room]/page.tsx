@@ -1,7 +1,10 @@
 // One room = one URL: /<room>/ (pretty path, e.g. /welcome-room/), entryway via
-// the #fragment (/welcome-room/#frontdoor). This server wrapper exists only to
-// enumerate which rooms to pre-render for static export; all the actual work is in
-// the client RoomViewer.
+// the #fragment (/welcome-room/#frontdoor).
+//
+// This page is intentionally EMPTY: the viewer lives in the persistent [room]
+// layout (layout.tsx), so it survives navigation between rooms and never drops
+// pointer lock. The page exists only to (1) make /<room>/ a real route and
+// (2) enumerate which rooms to pre-render for static export.
 //
 // generateStaticParams reads the room folders that exist at BUILD time. For a
 // published site the rooms live under public/rooms/<slug>/room.json, so each gets
@@ -9,7 +12,6 @@
 
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import RoomViewer from './RoomViewer';
 
 export function generateStaticParams() {
   try {
@@ -22,7 +24,7 @@ export function generateStaticParams() {
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ room: string }> }) {
-  const { room } = await params;
-  return <RoomViewer roomId={room} />;
+export default function Page() {
+  // Rendered as the layout's `children`; the layout's <RoomViewer /> is the UI.
+  return null;
 }

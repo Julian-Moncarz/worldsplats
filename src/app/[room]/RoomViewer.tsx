@@ -7,7 +7,7 @@
 // is no manifest and no "museum" object — the graph is emergent from linked rooms.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { RapierProvider } from '@/physics';
 import { Spinner, VolumeMaxLine, VolumeXLine, HomeLine } from '@/icons';
 
@@ -144,8 +144,25 @@ function RootUIOverlays({ isLoading, loadError }: { isLoading: boolean; loadErro
   );
 }
 
-export default function RoomViewer({ roomId }: { roomId: string }) {
+// roomId is read from the URL via usePathname() — NOT a prop — because this
+// component is mounted in the ROOT layout (app/layout.tsx), not the page. The
+// root layout is the only layout that survives navigation between sibling
+// dynamic-segment values (/study → /library); a layout INSIDE the [room] segment
+// remounts when the param changes. Because this instance (and the <Canvas> +
+// pointer lock it owns) is never unmounted across a room switch, usePathname()
+// just re-renders it with the new slug, the load effect below re-runs, and the
+// room swaps in place with the mouse still locked. (If this were a page-level
+// prop, the page subtree would remount on every router.push and the browser
+// would drop pointer lock with the removed canvas element.)
+export default function RoomViewer() {
   const router = useRouter();
+  const pathname = usePathname();
+  // Routes are a single segment: /<room>/. Take the first path part as the slug.
+  // Off a room route (e.g. "/" before the landing redirect, or Next-internal
+  // paths like "/_not-found") there is no room — render nothing and let the page
+  // handle it. Reserved segments starting with "_" are ignored.
+  const seg = (pathname ?? '').split('/').filter(Boolean)[0] ?? '';
+  const roomId = seg.startsWith('_') ? '' : seg;
 
   const [room, setRoom] = useState<Room | null>(null);
   // The id the loaded `room` belongs to. Tracked separately from the `roomId`
@@ -161,6 +178,14 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
   const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
   const mobileInputRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const { setMusic } = useAudio();
+
+  // Client-only gate. This viewer is hosted in the ROOT layout, which is
+  // prerendered for every route during static export — but it renders nothing
+  // meaningful on the server (no window, no splat, no pointer lock). Holding the
+  // first client render to match the server's (null) avoids a hydration mismatch;
+  // everything real mounts on the effect tick.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // Load the room for the current path id, and resolve the spawn entryway from the
   // URL fragment (#entryway). Re-runs whenever the room id changes.
@@ -249,6 +274,11 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
     setIsLoading(loading);
     setLoadError(error);
   };
+
+  // Render nothing until mounted on the client, or when off a room route (e.g.
+  // "/" before the landing redirect) — so the canvas host stays inert and the
+  // page shows through.
+  if (!mounted || !roomId) return null;
 
   if (roomError) {
     return (

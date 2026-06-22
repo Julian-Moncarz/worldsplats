@@ -229,7 +229,7 @@ function PageContent() {
   return (
     <div className="relative h-dvh w-dvw bg-black text-white font-sans">
       {/* 3D Canvas - fills entire viewport */}
-      <RapierProvider>
+      <RapierProvider world={world}>
         <WorldScene
           world={world}
           object={object}

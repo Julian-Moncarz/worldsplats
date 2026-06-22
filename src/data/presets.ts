@@ -3,6 +3,7 @@ export type WorldDef = {
   id: string;
   name: string;
   url: string;             // .spz or .ply (Spark auto-detects)
+  colliderUrl?: string;    // optional GLB collider mesh (Marble) for real wall collision
   imageUrl: string;
   musicUrl: string;
   imageCredit?: string;
@@ -35,6 +36,18 @@ export type ObjectDef =
 // NOTE: Keep a few .spz worlds; you can swap/add your own under /public/splats and switch to relative URLs later.
 // Spark demo asset:
 export const WORLDS: WorldDef[] = [
+  {
+    id: 'study-room',
+    name: 'Study Room (our Marble room)',
+    url: '/worlds/studyroom.spz',
+    colliderUrl: '/worlds/studyroom_collider.glb',
+    imageUrl: '/worlds/studyroom.webp',
+    musicUrl: '/music/Sunset_Focus.mp3',
+    position: [0, 0, 0],
+    quaternion: [1, 0, 0, 0], // Spark convention: 180° about X
+    scale: 1,
+    guide: 'Our first Marble-generated room: a cozy enclosed study with a wooden desk, bookshelves, and warm lamp light. Generated via the Marble API (marble-1.0-draft) for step one of the build.',
+  },
   // {
   //   id: 'butterfly',
   //   name: 'Butterfly (Spark demo)',

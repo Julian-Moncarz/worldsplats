@@ -1,29 +1,28 @@
 'use client';
 
-// Door crossings. Lives inside the Canvas. Given the current room's exits (from
-// the manifest), it (1) detects when the player is near a door AND looking at it,
-// reporting that door as "active" so a DOM hint ("Press E to enter …") can show,
-// and (2) crosses to the target room when the interact key is pressed while a
-// door is active. No visual marker — the doorway in the splat model IS the door.
+// Exits. Lives inside the Canvas. Given the current room's exits, it (1) detects
+// when the player is near an exit AND looking at it, reporting it as "active" so a
+// DOM hint ("Press E") can show, and (2) follows the exit's link when E is pressed
+// while one is active. No visual marker — the doorway in the splat IS the exit.
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useRapierWorld } from '@/physics';
 import { usePointerLock } from '@/providers/pointerLock';
-import type { Exit } from '@/data/manifest';
+import type { Exit } from '@/data/room';
 
 const INTERACT_CODE = 'KeyE';
-const GAZE_DOT = Math.cos((45 * Math.PI) / 180); // within ~45° of looking at the door
+const GAZE_DOT = Math.cos((45 * Math.PI) / 180); // within ~45° of looking at it
 
-export default function DoorCrossing({
+export default function Exits({
   exits,
-  onCross,
+  onExit,
   onActiveChange,
 }: {
   exits: Exit[];
-  onCross: (to: string) => void;
-  onActiveChange: (to: string | null) => void;
+  onExit: (to: string) => void;
+  onActiveChange: (active: boolean) => void;
 }) {
   const { playerBody } = useRapierWorld();
   const { camera } = useThree();
@@ -36,13 +35,13 @@ export default function DoorCrossing({
     () => (to: string | null) => {
       if (activeRef.current !== to) {
         activeRef.current = to;
-        onActiveChange(to);
+        onActiveChange(to != null);
       }
     },
     [onActiveChange],
   );
 
-  // On room switch, clear the active door and suppress interaction for a beat
+  // On room switch, clear the active exit and suppress interaction for a beat
   // while the player settles into the new room.
   useEffect(() => {
     armAt.current = performance.now() + 600;
@@ -60,12 +59,11 @@ export default function DoorCrossing({
 
     let active: string | null = null;
     for (const e of exits) {
-      const r = e.vol.radius || 1.3;
-      const dx = e.vol.pos[0] - p.x;
-      const dz = e.vol.pos[2] - p.z;
-      const distSq = dx * dx + dz * dz;
-      if (distSq > r * r) continue;
-      // gaze: is the door roughly in front of where we're looking?
+      const r = e.radius || 1.3;
+      const dx = e.pos[0] - p.x;
+      const dz = e.pos[2] - p.z;
+      if (dx * dx + dz * dz > r * r) continue;
+      // gaze: is the exit roughly in front of where we're looking?
       const dLen = Math.hypot(dx, dz) || 1;
       const dot = (dx / dLen) * (fwd.x / fhLen) + (dz / dLen) * (fwd.z / fhLen);
       if (dot >= GAZE_DOT) {
@@ -76,19 +74,19 @@ export default function DoorCrossing({
     setActive(active);
   });
 
-  // Interact key crosses through the active door.
+  // Interact key follows the active exit's link.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== INTERACT_CODE) return;
       const to = activeRef.current;
       if (to && performance.now() >= armAt.current) {
         setActive(null);
-        onCross(to);
+        onExit(to);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCross, setActive]);
+  }, [onExit, setActive]);
 
   return null;
 }

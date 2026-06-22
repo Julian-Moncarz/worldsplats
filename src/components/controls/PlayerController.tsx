@@ -25,6 +25,9 @@ type Props = {
   jumpSpeed?: number;
   start?: [number, number, number];
   mobileInputRef?: React.MutableRefObject<{x:number;y:number}>;
+  /** Yaw (degrees) to face on arrival; bump `spawnKey` to re-apply it. */
+  spawnYaw?: number;
+  spawnKey?: string;
 };
 
 export default function PlayerController({
@@ -37,6 +40,8 @@ export default function PlayerController({
   jumpSpeed = 6.0,
   start = [0, 1.4, 0],
   mobileInputRef,
+  spawnYaw,
+  spawnKey,
 }: Props) {
   const { camera } = useThree();
   const { world, rapier, playerBody } = useRapierWorld();
@@ -54,6 +59,18 @@ export default function PlayerController({
   useEffect(() => {
     bodyRef.current = playerBody;
   }, [playerBody]);
+
+  // Face the entryway's yaw on arrival (and on each room/entryway change). lookAt
+  // sets orientation from the direction only (position-independent), and
+  // PointerLockControls reads the camera's orientation on the next mouse move, so
+  // this persists. yaw convention matches the C-key readout: atan2(fwd.x, fwd.z).
+  useEffect(() => {
+    if (spawnYaw == null) return;
+    const yawRad = (spawnYaw * Math.PI) / 180;
+    const p = camera.position;
+    camera.lookAt(p.x + Math.sin(yawRad), p.y, p.z + Math.cos(yawRad));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spawnKey]);
 
   // Apply specter mode to the player body: clear the collider's collision filter
   // (pass through everything) and zero gravity (so you hover / fly). Reverting

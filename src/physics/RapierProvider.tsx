@@ -73,10 +73,13 @@ function findValidSpawn(
 export function RapierProvider({
   gravity = UNIVERSE_CONFIG.GRAVITY,
   world: worldDef,
+  spawn,
   children,
 }: {
   gravity?: { x: number; y: number; z: number };
   world?: WorldDef;
+  /** Entryway spawn (body-center). When set it overrides the floor search. */
+  spawn?: { x: number; y: number; z: number } | null;
   children: React.ReactNode;
 }) {
   const [rapierReady, setRapierReady] = useState(false);
@@ -88,8 +91,12 @@ export function RapierProvider({
   const envCollidersRef = useRef<RAPIER.Collider[]>([]);
   const playerBodyRef = useRef<RAPIER.RigidBody | null>(null);
   const [playerBodyState, setPlayerBodyState] = useState<RAPIER.RigidBody | null>(null);
-  // spawn computed from the (transformed) room collider; null = use configured START
-  const [spawn, setSpawn] = useState<{ x: number; y: number; z: number } | null>(null);
+  // spawn the player actually teleports to: the entryway override when provided,
+  // else a best-effort floor search from the room collider.
+  const [resolvedSpawn, setResolvedSpawn] = useState<{ x: number; y: number; z: number } | null>(null);
+  // latest entryway override, read inside the async collider-load callback
+  const spawnPropRef = useRef(spawn);
+  spawnPropRef.current = spawn;
 
   // init once
   useEffect(() => {
@@ -198,10 +205,16 @@ export function RapierProvider({
       });
       envCollidersRef.current = created;
 
-      if (isRoomCollider && !aabb.isEmpty()) {
+      const override = spawnPropRef.current;
+      if (override) {
+        // The room declares an entryway — trust it (this is the marked, known-good
+        // spot, and what fixes feet-below-floor spawns).
+        setResolvedSpawn(override);
+      } else if (isRoomCollider && !aabb.isEmpty()) {
+        // No entryway yet (e.g. a freshly generated, unmarked room): best-effort.
         const { RADIUS, HALF_HEIGHT } = UNIVERSE_CONFIG.PLAYER;
         const found = findValidSpawn(world, rapier, aabb, RADIUS, HALF_HEIGHT, playerBodyRef.current);
-        setSpawn(
+        setResolvedSpawn(
           found ?? {
             x: (aabb.min.x + aabb.max.x) / 2,
             y: aabb.min.y + HALF_HEIGHT + RADIUS + 0.4,
@@ -209,7 +222,7 @@ export function RapierProvider({
           },
         );
       } else {
-        setSpawn(null);
+        setResolvedSpawn(null);
       }
       console.log(`✓ Environment collider loaded (${created.length} mesh parts) from ${colliderUrl}`);
     });
@@ -264,12 +277,18 @@ export function RapierProvider({
     };
   }, [rapierReady]);
 
-  // Teleport the player onto the current room's real floor once both exist.
+  // Keep the resolved spawn in sync if the entryway override changes after the
+  // collider has loaded (e.g. arriving through a different entryway).
   useEffect(() => {
-    if (!playerBodyState || !spawn) return;
-    playerBodyState.setTranslation(spawn, true);
+    if (spawn) setResolvedSpawn(spawn);
+  }, [spawn?.x, spawn?.y, spawn?.z]);
+
+  // Teleport the player to the resolved spawn once both exist.
+  useEffect(() => {
+    if (!playerBodyState || !resolvedSpawn) return;
+    playerBodyState.setTranslation(resolvedSpawn, true);
     playerBodyState.setLinvel({ x: 0, y: 0, z: 0 }, true);
-  }, [playerBodyState, spawn]);
+  }, [playerBodyState, resolvedSpawn]);
 
   const value = useMemo<RapierCtx>(
     () => ({ rapier: rapierRef.current, world: worldRef.current, playerBody: playerBodyState }),

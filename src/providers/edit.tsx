@@ -1,15 +1,11 @@
 'use client';
 
-// Edit mode (spec §10): the viewer's `--edit` flag. In this Next.js app the flag
-// is the URL query `?edit=1` (or just `?edit`). Edit mode writes nothing — it adds
-// a live, copyable pos+yaw HUD and a "beam" raycast so you can walk the room, copy
-// coordinates, and hand them to Claude to write into the manifest.
-//
-// This provider also loads + validates the §5 manifest so the HUD can tell you
-// which manifest room you're marking.
+// Edit mode: the viewer's authoring flag, set by the URL query `?edit=1` (or just
+// `?edit`). It writes nothing — it adds a live, copyable pos+yaw HUD, a "beam"
+// raycast for marking artifacts, and a no-clip "specter" fly (toggle Z) so you can
+// reach any spot to mark entryways/exits, then hand the coordinates to Claude.
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { loadManifest, type Manifest } from '@/data/manifest';
 
 export type LiveCoords = {
   pos: [number, number, number];
@@ -24,7 +20,6 @@ type EditCtx = {
   liveRef: React.MutableRefObject<LiveCoords>;
   lastCopied: string | null;
   setLastCopied: (s: string | null) => void;
-  manifest: Manifest | null;
   /**
    * Specter (noclip) mode — only meaningful in edit mode. When ON the player
    * passes through world colliders and flies; toggled with Z. `specterRef`
@@ -42,7 +37,6 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
   const [editMode, setEditMode] = useState(false);
   const liveRef = useRef<LiveCoords>({ pos: [0, 0, 0], yaw: 0, pitch: 0, hasBody: false });
   const [lastCopied, setLastCopied] = useState<string | null>(null);
-  const [manifest, setManifest] = useState<Manifest | null>(null);
   const [specter, setSpecter] = useState(false);
   const specterRef = useRef(false);
   const toggleSpecter = () => {
@@ -56,18 +50,8 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
     setEditMode(params.get('edit') === '1' || params.has('edit'));
   }, []);
 
-  // Load + validate the manifest once.
-  useEffect(() => {
-    loadManifest()
-      .then((m) => {
-        setManifest(m);
-        console.log(`✓ Manifest loaded: "${m.world.title}" — ${Object.keys(m.rooms).length} room(s), start_room="${m.world.start_room}"`);
-      })
-      .catch((e) => console.error('Manifest load/validation failed:', e));
-  }, []);
-
   return (
-    <Ctx.Provider value={{ editMode, liveRef, lastCopied, setLastCopied, manifest, specter, specterRef, toggleSpecter }}>
+    <Ctx.Provider value={{ editMode, liveRef, lastCopied, setLastCopied, specter, specterRef, toggleSpecter }}>
       {children}
     </Ctx.Provider>
   );

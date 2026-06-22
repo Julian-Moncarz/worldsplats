@@ -1,9 +1,9 @@
 // src/data/presets.ts
-import type { Manifest, Room } from '@/data/manifest';
+import type { Room } from '@/data/room';
 
-// WorldDef is the viewer's internal per-room render shape. The runtime room list
-// is built from the manifest (manifestToWorldDefs below) — there is no hardcoded
-// world library anymore.
+// WorldDef is the viewer's internal per-room render shape, built from a Room
+// (roomToWorldDef below). There is no hardcoded world library — the renderer is
+// given one room at a time.
 export type WorldDef = {
   id: string;
   name: string;
@@ -39,29 +39,21 @@ export type ObjectDef =
     };
 
 // All Marble splats share the same canonical transform: identity position, the
-// Spark 180°-about-X flip, and the room's calibrated scale (§5.1). Per-room
+// Spark 180°-about-X flip, and the room's calibrated scale. Per-room
 // rotation/offset is never needed since rooms never share space.
 export function roomToWorldDef(id: string, room: Room): WorldDef {
   return {
     id,
     name: room.display_name,
-    url: room.assets.splat_url,
-    colliderUrl: room.assets.collider_url,
-    imageUrl: room.assets.thumbnail_url ?? '',
+    url: room.splat_url,
+    colliderUrl: room.collider_url,
+    imageUrl: room.thumbnail_url ?? '',
     musicUrl: room.music_url ?? '',
     position: [0, 0, 0],
     quaternion: [1, 0, 0, 0], // Spark convention: 180° about X
     scale: room.calibration.scale,
     guide: room.display_name,
   };
-}
-
-// Ordered room list for the runtime, start_room first.
-export function manifestToWorldDefs(manifest: Manifest): WorldDef[] {
-  const start = manifest.world.start_room;
-  const ids = Object.keys(manifest.rooms);
-  const ordered = [start, ...ids.filter((id) => id !== start)];
-  return ordered.map((id) => roomToWorldDef(id, manifest.rooms[id]));
 }
 
 export const OBJECTS: ObjectDef[] = [

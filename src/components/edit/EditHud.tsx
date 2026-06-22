@@ -9,8 +9,8 @@ import { useEdit } from '@/providers/edit';
 
 const f = (n: number) => n.toFixed(2);
 
-export default function EditHud({ currentWorldId }: { currentWorldId: string }) {
-  const { editMode, liveRef, lastCopied, manifest, specter } = useEdit();
+export default function EditHud({ roomName }: { roomName: string }) {
+  const { editMode, liveRef, lastCopied, specter } = useEdit();
   const [text, setText] = useState('pos:[…], yaw:…');
 
   useEffect(() => {
@@ -31,10 +31,7 @@ export default function EditHud({ currentWorldId }: { currentWorldId: string }) 
 
   if (!editMode) return null;
 
-  const room = manifest?.rooms[currentWorldId];
-  const marking = room
-    ? `marking: ${room.display_name}`
-    : `current world "${currentWorldId}" is not in the manifest`;
+  const marking = `marking: ${roomName}`;
 
   return (
     <div className="pointer-events-auto absolute bottom-4 left-4 z-20 max-w-[92vw] space-y-1 rounded-lg border border-amber-500/40 bg-zinc-900/85 px-4 py-3 font-mono text-xs text-amber-200 backdrop-blur">

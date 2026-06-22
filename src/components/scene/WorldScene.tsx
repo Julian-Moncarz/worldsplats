@@ -11,9 +11,9 @@ import PlayerController from '@/components/controls/PlayerController';
 import PointerLockBridge from '@/components/scene/PointerLockBridge';
 import TouchLookController from '@/components/controls/TouchLookController';
 import EditCapture from '@/components/edit/EditCapture';
-import DoorCrossing from '@/components/scene/DoorCrossing';
+import Exits from '@/components/scene/Exits';
 import type { WorldDef, ObjectDef } from '@/data/presets';
-import type { Exit } from '@/data/manifest';
+import type { Exit } from '@/data/room';
 
 export type ShootHandle = {
   shoot: () => void;
@@ -29,8 +29,10 @@ type Props = {
   onLoadingChange?: (isLoading: boolean, error?: string) => void;
   mobileInputRef?: React.MutableRefObject<{x:number;y:number}>;
   exits?: Exit[];
-  onCross?: (to: string) => void;
-  onActiveExitChange?: (to: string | null) => void;
+  onExit?: (to: string) => void;
+  onActiveExitChange?: (active: boolean) => void;
+  spawnYaw?: number;
+  spawnKey?: string;
 };
 
 type Spawned = {
@@ -50,8 +52,10 @@ function SceneInner({
   onLoadingChange,
   mobileInputRef,
   exits,
-  onCross,
-  onActiveExitChange }: Props) {
+  onExit,
+  onActiveExitChange,
+  spawnYaw,
+  spawnKey }: Props) {
   const { camera } = useThree();
   const [spawned, setSpawned] = useState<Spawned[]>([]);
   const speedRef = useRef(projectileSpeed);
@@ -96,16 +100,21 @@ function SceneInner({
   return (
     <>
       {/* FPS-style player controls */}
-      <PlayerController mobileInputRef={inputRef} moveSpeed={playerMoveSpeed} />
+      <PlayerController
+        mobileInputRef={inputRef}
+        moveSpeed={playerMoveSpeed}
+        spawnYaw={spawnYaw}
+        spawnKey={spawnKey}
+      />
 
       {/* Edit-mode marking capture (no-op unless ?edit=1) */}
       <EditCapture />
 
-      {/* Door crossings between manifest rooms */}
-      {exits && onCross && (
-        <DoorCrossing
+      {/* Exits → links to other rooms */}
+      {exits && onExit && (
+        <Exits
           exits={exits}
-          onCross={onCross}
+          onExit={onExit}
           onActiveChange={onActiveExitChange ?? (() => {})}
         />
       )}
@@ -149,8 +158,10 @@ export default function WorldScene({
   onLoadingChange,
   mobileInputRef,
   exits,
-  onCross,
-  onActiveExitChange }: Props) {
+  onExit,
+  onActiveExitChange,
+  spawnYaw,
+  spawnKey }: Props) {
   const handleLoadingChange = useCallback((loading: boolean, error?: string) => {
     onLoadingChange?.(loading, error);
   }, [onLoadingChange]);
@@ -202,8 +213,10 @@ export default function WorldScene({
         onLoadingChange={handleLoadingChange}
         mobileInputRef={mobileInputRef}
         exits={exits}
-        onCross={onCross}
+        onExit={onExit}
         onActiveExitChange={onActiveExitChange}
+        spawnYaw={spawnYaw}
+        spawnKey={spawnKey}
       />
     </Canvas>
     </div>

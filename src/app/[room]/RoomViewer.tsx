@@ -92,12 +92,14 @@ function ExitHint({ active }: { active: boolean }) {
   );
 }
 
-function RootUIOverlays({ isLoading, loadError }: { isLoading: boolean; loadError?: string }) {
+function RootUIOverlays({ covered, loadError }: { covered: boolean; loadError?: string }) {
   const { isLocked, unlock } = usePointerLock();
   const { muted, setMuted } = useAudio();
+  // Reticle + veil follow the blink (`covered`), not raw loading, so the crosshair
+  // stays hidden behind the black and reappears only once the room is revealed.
   return (
     <>
-      <Reticle visible={isLocked && !isLoading && !loadError} />
+      <Reticle visible={isLocked && !covered && !loadError} />
       <IconButton
         aria-label="Toggle volume"
         onClick={() => setMuted(!muted)}
@@ -112,20 +114,21 @@ function RootUIOverlays({ isLoading, loadError }: { isLoading: boolean; loadErro
           icon={<HomeLine />}
         />
       )}
-      {/* Cross-fade veil over the brief moment the next room's splat + collider
-          swap in. The <Canvas> stays mounted underneath (same-origin soft nav),
-          so pointer lock, audio, and the GPU context all persist — the veil just
-          dips through black and clears the instant the room is ready. With
-          neighbors preloaded this is a quick dim, not a wall, and never a
-          re-engage gate. Always mounted; opacity-driven so it can transition. */}
+      {/* Cinematic "doorway blink": a full-screen black div whose opacity ramps
+          0→1→0, so it literally dims every pixel to black and back. Driven by
+          `covered` (see RoomViewer). The fade OUT is ~280ms — deliberately a hair
+          shorter than the 320ms swap gate, so the veil is fully opaque before the
+          new room is committed and nothing can flash through. Fade IN is a slower
+          ~420ms reveal. The <Canvas> stays mounted underneath, so pointer lock,
+          audio, and the GPU context persist across the swap. */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black transition-opacity duration-300 ${
-          isLoading && !loadError ? 'opacity-100' : 'opacity-0'
+        className={`pointer-events-none absolute inset-0 z-10 bg-black transition-opacity ${
+          covered && !loadError
+            ? 'opacity-100 duration-[280ms] ease-in-out'
+            : 'opacity-0 duration-[420ms] ease-out'
         }`}
-      >
-        <Spinner size={28} className="text-white/80" />
-      </div>
+      />
 
       {loadError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
@@ -187,6 +190,19 @@ export default function RoomViewer() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  // ---- Cinematic "doorway blink" ----
+  // The black veil's opacity is driven by `covered`. The key to a smooth, glitch-
+  // free transition is that the room SWAP is GATED on the veil being fully black:
+  // the OLD world dims to black first, the NEW world is committed only behind an
+  // opaque veil (see the load effect), then we fade back in. Binding the veil to
+  // raw isLoading instead let the incoming splat finish mid-fade and flash its
+  // brightest parts through the half-transparent veil.
+  const FADE_OUT_MS = 320;   // gate: wait this long (veil fully black) before swapping
+  const HOLD_MS = 140;       // min extra black hold after the new splat is ready
+  const [covered, setCovered] = useState(true); // start covered for the cold load
+  const coverStartRef = useRef(0);
+  const loadedIdRef = useRef<string | null>(null); // committed room id, sync (no stale dep)
+
   // Load the room for the current path id, and resolve the spawn entryway from the
   // URL fragment (#entryway). Re-runs whenever the room id changes.
   //
@@ -202,22 +218,53 @@ export default function RoomViewer() {
     if (!roomId) return;
     let cancelled = false;
     setRoomError(undefined);
-    loadRoom(`/rooms/${roomId}/room.json`)
-      .then((r) => {
-        if (cancelled) return;
-        const ewId = entrywayIdFromHash(window.location.hash);
-        const ew = resolveEntryway(r, ewId);
-        setRoom(r);
-        setLoadedId(roomId);
-        setSpawn(ew ? { pos: ew.pos, yaw: ew.yaw, key: `${roomId}#${ew.id}` } : null);
-      })
-      .catch((e) => {
+    // Begin the blink: dim the CURRENT world to black, and mark loading so the
+    // reveal waits for the NEW splat (not the old one that's still on screen).
+    setCovered(true);
+    setIsLoading(true);
+    coverStartRef.current = performance.now();
+    const hadWorld = loadedIdRef.current !== null; // cold start has nothing to fade
+
+    (async () => {
+      let r: Room;
+      try {
+        r = await loadRoom(`/rooms/${roomId}/room.json`);
+      } catch (e) {
         if (cancelled) return;
         console.error('Room load failed:', e);
         setRoomError(e instanceof Error ? e.message : String(e));
-      });
+        return;
+      }
+      if (cancelled) return;
+      // Gate the swap on the fade-to-black having fully finished, so the new room
+      // mounts behind an opaque veil and can never flash through it. (Skip on cold
+      // start — there's no old world to fade, just the loading screen.)
+      const elapsed = performance.now() - coverStartRef.current;
+      if (hadWorld && elapsed < FADE_OUT_MS) {
+        await new Promise((res) => setTimeout(res, FADE_OUT_MS - elapsed));
+        if (cancelled) return;
+      }
+      const ew = resolveEntryway(r, entrywayIdFromHash(window.location.hash));
+      setRoom(r);
+      setLoadedId(roomId);
+      loadedIdRef.current = roomId;
+      setSpawn(ew ? { pos: ew.pos, yaw: ew.yaw, key: `${roomId}#${ew.id}` } : null);
+    })();
     return () => { cancelled = true; };
   }, [roomId]);
+
+  // Reveal: once the committed room matches the URL AND its splat has finished
+  // loading (behind the black), hold briefly then fade the veil back in. The
+  // `loadedId === roomId` gate keeps us from revealing the OLD world during the
+  // fade-out, and the manual setIsLoading(true) above keeps us from revealing in
+  // the stale-false window right after the swap, before the new splat reports.
+  useEffect(() => {
+    if (loadedId !== roomId || isLoading) return;
+    const elapsed = performance.now() - coverStartRef.current;
+    const wait = Math.max(0, FADE_OUT_MS + HOLD_MS - elapsed);
+    const t = setTimeout(() => setCovered(false), wait);
+    return () => clearTimeout(t);
+  }, [loadedId, roomId, isLoading]);
 
   // Preload neighbors: warm the HTTP cache for each same-origin exit's room.json
   // and its splat + collider, so walking through a door swaps in near-instantly
@@ -328,7 +375,7 @@ export default function RoomViewer() {
       </RapierProvider>
 
       <ClickToEngage isLoading={isLoading} loadError={loadError} />
-      <RootUIOverlays isLoading={isLoading} loadError={loadError} />
+      <RootUIOverlays covered={covered} loadError={loadError} />
       <ExitHint active={exitActive || artifactActive} />
       {overlayUrl && <ContentOverlay url={overlayUrl} onClose={() => setOverlayUrl(null)} />}
 

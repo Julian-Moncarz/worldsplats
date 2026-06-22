@@ -6,8 +6,8 @@
   "music_url": "/music/Sunset_Focus.mp3",
   "calibration": { "scale": 1.0 },
   "entryways": [
-    { "id": "default", "pos": [0.02, -0.11, 1.75], "yaw": 0.11 },
-    { "id": "from-library", "pos": [0.02, -0.11, 1.75], "yaw": 0.11 }
+    { "id": "default", "pos": [0.02, -0.11, 1.75], "yaw": -179.89 },
+    { "id": "from-library", "pos": [0.02, -0.11, 1.75], "yaw": -179.89 }
   ],
   "exits": [
     { "pos": [0.02, -0.11, 1.75], "radius": 1.3, "to": "../library/#from-study" }

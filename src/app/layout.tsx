@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-//import { Geist, Geist_Mono } from "next/font/google";
+import { Press_Start_2P } from "next/font/google";
 import "@/styles/globals.css";
 import Providers from "./providers";
 
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+// Classic arcade pixel font for diegetic HUD bits (the exit prompt). Exposed as
+// a CSS variable; next/font self-hosts it at build time, so it ships with the
+// static export — no runtime network fetch.
+const retro = Press_Start_2P({
+  variable: "--font-retro",
+  weight: "400",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,10 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="antialiased"
-        //className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${retro.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

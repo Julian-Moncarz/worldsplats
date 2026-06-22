@@ -1,0 +1,23 @@
+{
+  "world": {
+    "title": "Explorable Site",
+    "start_room": "study-room",
+    "audio_defaults": { "music_volume": 0.25, "loop": true }
+  },
+  "rooms": {
+    "study-room": {
+      "display_name": "Study Room",
+      "assets": {
+        "splat_url": "/worlds/studyroom.spz",
+        "collider_url": "/worlds/studyroom_collider.glb",
+        "pano_url": "/worlds/studyroom_pano.png",
+        "thumbnail_url": "/worlds/studyroom.webp"
+      },
+      "calibration": { "scale": 1.0 },
+      "default_spawn": { "pos": [0, 1.6, 0], "yaw": 0 },
+      "exits": [],
+      "content_triggers": [],
+      "music_url": "/music/Sunset_Focus.mp3"
+    }
+  }
+}

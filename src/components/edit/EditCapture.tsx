@@ -72,7 +72,14 @@ export default function EditCapture() {
           { x: origin.x, y: origin.y, z: origin.z },
           { x: dir.x, y: dir.y, z: dir.z },
         );
-        const hit = world.castRay(ray, 100, true);
+        // Exclude the player's own body — the ray starts at the camera, which is
+        // inside the player capsule, so without this it self-hits at distance ~0
+        // and drops the orb where you're standing.
+        const hit = world.castRay(
+          ray, 100, true,
+          undefined, undefined, undefined,
+          playerBody ?? undefined,
+        );
         if (!hit) {
           setLastCopied('beam: nothing in view (no collider hit)');
           return;

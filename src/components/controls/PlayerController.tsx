@@ -139,49 +139,55 @@ export default function PlayerController({
   useFrame(() => {
     const rb = bodyRef.current;
     if (!rb) return;
-    if (!isLocked) return;  
 
-    camera.getWorldDirection(forward);
-    forward.y = 0; forward.normalize();
-    right.crossVectors(forward, camera.up).normalize();
+    // Movement is driven only while pointer lock is engaged. Camera positioning
+    // (below) happens every frame regardless, so the room is framed correctly
+    // the instant you spawn — even before you click to engage.
+    if (isLocked) {
+      camera.getWorldDirection(forward);
+      forward.y = 0; forward.normalize();
+      right.crossVectors(forward, camera.up).normalize();
 
-    // Keyboard input
-    const z = (key.current['KeyW'] ? 1 : 0) - (key.current['KeyS'] ? 1 : 0);
-    const xk = (key.current['KeyD'] ? 1 : 0) - (key.current['KeyA'] ? 1 : 0);
+      // Keyboard input
+      const z = (key.current['KeyW'] ? 1 : 0) - (key.current['KeyS'] ? 1 : 0);
+      const xk = (key.current['KeyD'] ? 1 : 0) - (key.current['KeyA'] ? 1 : 0);
 
-    // Mobile joystick input (override keyboard if non-zero)
-    const xm = mobileVec.current.x;
-    const zm = -mobileVec.current.y; // invert: up is negative y
-    const x = Math.abs(xm) > 0.01 ? xm : xk;
-    const zFinal = Math.abs(zm) > 0.01 ? zm : z;
+      // Mobile joystick input (override keyboard if non-zero)
+      const xm = mobileVec.current.x;
+      const zm = -mobileVec.current.y; // invert: up is negative y
+      const x = Math.abs(xm) > 0.01 ? xm : xk;
+      const zFinal = Math.abs(zm) > 0.01 ? zm : z;
 
-    const dir = new THREE.Vector3();
-    if (zFinal) dir.addScaledVector(forward, zFinal);
-    if (x) dir.addScaledVector(right, x);
-    if (dir.lengthSq() > 0) dir.normalize();
+      const dir = new THREE.Vector3();
+      if (zFinal) dir.addScaledVector(forward, zFinal);
+      if (x) dir.addScaledVector(right, x);
+      if (dir.lengthSq() > 0) dir.normalize();
 
-    const speed = (key.current['ShiftLeft'] || key.current['ShiftRight']) ? sprintSpeed * 0.1 : moveSpeed * 0.1;
-    const cur = rb.linvel();
-    const target = { x: dir.x * speed, y: cur.y, z: dir.z * speed };
-    if (dir.lengthSq() > 0 && !Number.isFinite(target.x + target.y + target.z)) {
-      console.warn('[Player] non-finite velocity target', target);
+      const speed = (key.current['ShiftLeft'] || key.current['ShiftRight']) ? sprintSpeed * 0.1 : moveSpeed * 0.1;
+      const cur = rb.linvel();
+      const target = { x: dir.x * speed, y: cur.y, z: dir.z * speed };
+      if (dir.lengthSq() > 0 && !Number.isFinite(target.x + target.y + target.z)) {
+        console.warn('[Player] non-finite velocity target', target);
+      }
+
+      if (specterRef.current) {
+        // Specter mode: no gravity, so drive vertical directly with the arrows
+        // (up/down). No key held → 0 → hover in place.
+        const upDir = (key.current['ArrowUp'] ? 1 : 0) - (key.current['ArrowDown'] ? 1 : 0);
+        target.y = upDir * speed;
+        jumpRequested.current = false;
+      } else if (jumpRequested.current && isGrounded()) {
+        // Jump only when grounded
+        target.y = jumpSpeed;
+        jumpRequested.current = false;
+      }
+
+      rb.setLinvel(target, true);
     }
 
-    if (specterRef.current) {
-      // Specter mode: no gravity, so drive vertical directly with the arrows
-      // (up/down). No key held → 0 → hover in place.
-      const upDir = (key.current['ArrowUp'] ? 1 : 0) - (key.current['ArrowDown'] ? 1 : 0);
-      target.y = upDir * speed;
-      jumpRequested.current = false;
-    } else if (jumpRequested.current && isGrounded()) {
-      // Jump only when grounded
-      target.y = jumpSpeed;
-      jumpRequested.current = false;
-    }
-
-    rb.setLinvel(target, true);
-
-    // Camera at eye height above feet
+    // Camera at eye height above feet — always, so the spawn view is correct on
+    // load (otherwise the camera sits at the default canvas position staring at
+    // the floor until the first click engages pointer lock).
     const p = rb.translation();
     const feetY = p.y - (halfHeight + radius);
     camera.position.set(p.x, feetY + eyeHeight, p.z);

@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import Floor from '@/components/environment/Floor';
-import * as THREE from 'three';
+import React, { useCallback, useRef } from 'react';
+import { Canvas } from '@react-three/fiber';
 
 import SparkLayer from '@/components/spark/SparkLayer';
 import SplatWorld from '@/components/spark/SplatWorld';
@@ -12,19 +10,11 @@ import PointerLockBridge from '@/components/scene/PointerLockBridge';
 import TouchLookController from '@/components/controls/TouchLookController';
 import EditCapture from '@/components/edit/EditCapture';
 import Exits from '@/components/scene/Exits';
-import type { WorldDef, ObjectDef } from '@/data/presets';
+import type { WorldDef } from '@/data/presets';
 import type { Exit } from '@/data/room';
-
-export type ShootHandle = {
-  shoot: () => void;
-  clear: () => void;
-};
 
 type Props = {
   world: WorldDef;
-  object: ObjectDef;
-  shootSink: React.RefObject<ShootHandle | null>; // parent can call shoot/clear
-  projectileSpeed?: number;
   playerMoveSpeed?: number;
   onLoadingChange?: (isLoading: boolean, error?: string) => void;
   mobileInputRef?: React.MutableRefObject<{x:number;y:number}>;
@@ -35,19 +25,8 @@ type Props = {
   spawnKey?: string;
 };
 
-type Spawned = {
-  id: string;
-  def: ObjectDef;
-  t: number;
-  startPos: THREE.Vector3;
-  velocity: THREE.Vector3;
-};
-
 function SceneInner({
   world,
-  object,
-  shootSink,
-  projectileSpeed = 18,
   playerMoveSpeed,
   onLoadingChange,
   mobileInputRef,
@@ -56,46 +35,12 @@ function SceneInner({
   onActiveExitChange,
   spawnYaw,
   spawnKey }: Props) {
-  const { camera } = useThree();
-  const [spawned, setSpawned] = useState<Spawned[]>([]);
-  const speedRef = useRef(projectileSpeed);
   const localMobileInputRef = useRef<{x:number;y:number}>({x:0,y:0});
   const inputRef = mobileInputRef || localMobileInputRef;
-
-  useEffect(() => {
-    speedRef.current = projectileSpeed;
-  }, [projectileSpeed]);
-
-  const shoot = useCallback(() => {
-    // Spawn from camera with initial velocity along forward
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir).normalize();
-    const origin = camera.getWorldPosition(new THREE.Vector3());
-    const start = origin.clone().add(dir.clone().multiplyScalar(0.8)); // just in front of camera
-    const vel = dir.clone().multiplyScalar(speedRef.current);
-
-    setSpawned((arr) => [
-      ...arr,
-      { id: crypto.randomUUID(), def: object, t: performance.now(), startPos: start, velocity: vel },
-    ]);
-  }, [camera, object]);
-
-  const clear = useCallback(() => setSpawned([]), []);
 
   const handleLoadingChange = useCallback((loading: boolean, error?: string) => {
     onLoadingChange?.(loading, error);
   }, [onLoadingChange]);
-
-  // expose to parent
-  useEffect(() => {
-    shootSink.current = { shoot, clear };
-    return () => { shootSink.current = null; };
-  }, [shoot, clear, shootSink]);
-
-  // Small ambient move to show motion
-  useFrame(() => {
-    // could do any per-frame logic here
-  });
 
   return (
     <>
@@ -107,7 +52,7 @@ function SceneInner({
         spawnKey={spawnKey}
       />
 
-      {/* Edit-mode marking capture (no-op unless ?edit=1) */}
+      {/* Edit-mode marking capture (no-op unless edit mode) */}
       <EditCapture />
 
       {/* Exits → links to other rooms */}
@@ -122,16 +67,13 @@ function SceneInner({
       {/* Touch-based camera look for mobile */}
       <TouchLookController />
 
-      {/* Environment collision mesh (visuals only, physics in provider) */}
-      <Floor visible={false} />
-
       {/* Spark renderer + the current Splat world */}
       <SparkLayer />
-      <SplatWorld 
-        key={world.url} 
-        url={world.url} 
-        position={world.position} 
-        quaternion={world.quaternion} 
+      <SplatWorld
+        key={world.url}
+        url={world.url}
+        position={world.position}
+        quaternion={world.quaternion}
         scale={world.scale}
         onLoadingChange={handleLoadingChange}
       />
@@ -139,21 +81,12 @@ function SceneInner({
       {/* Usual lighting for mesh-based objects */}
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
-
-      {/* TODO: Re-add projectiles using provider-backed physics */}
-
-      {/* Optional helpers */}
-      {/* <gridHelper args={[100, 100]} /> */}
-      {/* <axesHelper scale={2} /> */}
     </>
   );
 }
 
 export default function WorldScene({
   world,
-  object,
-  shootSink,
-  projectileSpeed,
   playerMoveSpeed,
   onLoadingChange,
   mobileInputRef,
@@ -186,29 +119,12 @@ export default function WorldScene({
       // Disable shadows for now to reduce GPU pressure
       shadows={false}
       camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 1.2, 3] }}
-      // Add error boundary handling
-      onCreated={(state) => {
-        const gl = state.gl.getContext();
-        const dbg = {
-          webglVersion: gl?.getParameter?.(0x1F02 /* VERSION */),
-          shadingLanguageVersion: gl?.getParameter?.(0x8B8C /* SHADING_LANGUAGE_VERSION */),
-          rendererInfo: state.gl.info,
-          capabilities: state.gl.capabilities,
-          maxTextureSize: state.gl.capabilities.maxTextureSize,
-          precision: state.gl.capabilities.precision,
-          floatTextures: state.gl.capabilities.isWebGL2 || !!state.gl.extensions.get('OES_texture_float'),
-        };
-        console.log('Three.js Canvas created successfully', dbg);
-      }}
     >
       <PointerLockBridge />
       <TouchLookController />
 
       <SceneInner
         world={world}
-        object={object}
-        shootSink={shootSink}
-        projectileSpeed={projectileSpeed}
         playerMoveSpeed={playerMoveSpeed}
         onLoadingChange={handleLoadingChange}
         mobileInputRef={mobileInputRef}

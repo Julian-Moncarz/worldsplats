@@ -143,35 +143,32 @@ export function RapierProvider({
     return () => { mounted = false; };
   }, [rapierReady]);
 
-  // Build the environment collider for the CURRENT world.
-  // When the world has a colliderUrl (a Marble collider GLB), bake the same
-  // position/quaternion/scale the splat uses (see SplatWorld) into the trimesh so
-  // walls/floor line up with what you see; otherwise fall back to the flat floor.
-  const colliderUrl = worldDef?.colliderUrl ?? UNIVERSE_CONFIG.ENVIRONMENT.MESH;
-  const isRoomCollider = !!worldDef?.colliderUrl;
+  // Build the environment collider for the CURRENT room from its Marble collider
+  // GLB, baking the same position/quaternion/scale the splat uses (see SplatWorld)
+  // into the trimesh so walls/floor line up with what you see.
+  const colliderUrl = worldDef?.colliderUrl;
+  const isRoomCollider = !!colliderUrl;
   const posKey = (worldDef?.position ?? [0, 0, 0]).join(',');
   const quatKey = (worldDef?.quaternion ?? [0, 0, 0, 1]).join(',');
   const scaleKey = worldDef?.scale ?? 1;
 
   useEffect(() => {
-    if (!rapierReady) return;
+    if (!rapierReady || !colliderUrl) return;
     const world = worldRef.current;
     const rapier = rapierRef.current;
     if (!world || !rapier) return;
     let disposed = false;
 
-    // transform matching the splat's (identity for the flat-floor fallback)
+    // transform matching the splat's
     const M = new THREE.Matrix4();
-    if (isRoomCollider) {
-      const p = worldDef!.position ?? [0, 0, 0];
-      const q = worldDef!.quaternion ?? [0, 0, 0, 1];
-      const s = worldDef!.scale ?? 1;
-      M.compose(
-        new THREE.Vector3(p[0], p[1], p[2]),
-        new THREE.Quaternion(q[0], q[1], q[2], q[3]),
-        new THREE.Vector3(s, s, s),
-      );
-    }
+    const p = worldDef!.position ?? [0, 0, 0];
+    const q = worldDef!.quaternion ?? [0, 0, 0, 1];
+    const s = worldDef!.scale ?? 1;
+    M.compose(
+      new THREE.Vector3(p[0], p[1], p[2]),
+      new THREE.Quaternion(q[0], q[1], q[2], q[3]),
+      new THREE.Vector3(s, s, s),
+    );
 
     const loader = new GLTFLoader();
     loader.load(colliderUrl, (gltf) => {

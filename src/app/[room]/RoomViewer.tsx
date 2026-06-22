@@ -22,12 +22,10 @@ import {
   type Room,
   type Exit,
 } from '@/data/room';
-import { roomToWorldDef, OBJECTS, type ObjectDef } from '@/data/presets';
+import { roomToWorldDef } from '@/data/presets';
 import { Reticle } from '@/components/hud/ClickToPlay';
 import { IconButton } from '@/components/hud/Button';
 import MobileHud from '@/components/controls/MobileHud';
-
-type ShootHandle = { shoot: () => void; clear: () => void };
 
 const MOVE_SPEED = 14;
 const EMPTY_EXITS: Exit[] = [];
@@ -130,28 +128,15 @@ function RootUIOverlays({ isLoading, loadError }: { isLoading: boolean; loadErro
   );
 }
 
-function ShootHotkey({ shootRef }: { shootRef: React.RefObject<ShootHandle | null> }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space') { e.preventDefault(); shootRef.current?.shoot(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [shootRef]);
-  return null;
-}
-
 export default function RoomViewer({ roomId }: { roomId: string }) {
   const router = useRouter();
 
-  const [object] = useState<ObjectDef>(OBJECTS[0]);
   const [room, setRoom] = useState<Room | null>(null);
   const [spawn, setSpawn] = useState<Spawn>(null);
   const [roomError, setRoomError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | undefined>();
   const [exitActive, setExitActive] = useState(false);
-  const shootRef = useRef<ShootHandle | null>(null);
   const mobileInputRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const { setMusic } = useAudio();
 
@@ -238,8 +223,6 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
       >
         <WorldScene
           world={world}
-          object={object}
-          shootSink={shootRef}
           playerMoveSpeed={MOVE_SPEED}
           onLoadingChange={handleLoadingChange}
           mobileInputRef={mobileInputRef}
@@ -257,7 +240,6 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
 
       <EditHud roomName={world.name} />
       <MobileHud mobileInputRef={mobileInputRef} />
-      <ShootHotkey shootRef={shootRef} />
     </div>
   );
 }

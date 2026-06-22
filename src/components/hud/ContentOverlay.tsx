@@ -2,27 +2,30 @@
 
 // A content artifact opens here: a fullscreen overlay over the canvas. The 3D
 // world is paused (the player controller ignores input while pointer-lock is
-// released), not destroyed — closing returns you exactly where you were. Opening
-// pushes a history entry so the browser Back button (and Esc, and ✕) all close it.
+// released), not destroyed — closing returns you exactly where you were. Closing
+// (✕ or Esc) re-acquires pointer-lock in the same gesture, so mouse-look resumes
+// immediately with no extra click. (Lock was released programmatically on open,
+// not via a user Esc, so the browser allows the immediate re-lock.)
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { usePointerLock } from '@/providers/pointerLock';
 
 export default function ContentOverlay({ url, onClose }: { url: string; onClose: () => void }) {
-  const { unlock } = usePointerLock();
+  const { lock, unlock } = usePointerLock();
+
+  // Release the mouse so the embedded page is usable.
+  useEffect(() => { unlock(); }, [unlock]);
+
+  const close = useCallback(() => {
+    lock();      // re-grab the mouse in this gesture's call stack
+    onClose();
+  }, [lock, onClose]);
 
   useEffect(() => {
-    unlock(); // release the mouse so the embedded page is usable
-    window.history.pushState({ overlay: true }, '');
-    const onPop = () => onClose();
-    const onKey = (e: KeyboardEvent) => { if (e.code === 'Escape') window.history.back(); };
-    window.addEventListener('popstate', onPop);
+    const onKey = (e: KeyboardEvent) => { if (e.code === 'Escape') { e.preventDefault(); close(); } };
     window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('popstate', onPop);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [unlock, onClose]);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [close]);
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-black">
@@ -31,7 +34,7 @@ export default function ContentOverlay({ url, onClose }: { url: string; onClose:
         <div className="flex shrink-0 items-center gap-3">
           <a href={url} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-white">open ↗</a>
           <button
-            onClick={() => window.history.back()}
+            onClick={close}
             className="rounded px-2 py-1 text-zinc-300 hover:bg-white/10 hover:text-white"
           >
             ✕ close (Esc)

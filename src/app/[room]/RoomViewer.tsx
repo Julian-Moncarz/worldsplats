@@ -105,25 +105,31 @@ function RootUIOverlays({ isLoading, loadError }: { isLoading: boolean; loadErro
           icon={<HomeLine />}
         />
       )}
-      {(isLoading || loadError) && (
+      {/* Cross-fade veil over the brief moment the next room's splat + collider
+          swap in. The <Canvas> stays mounted underneath (same-origin soft nav),
+          so pointer lock, audio, and the GPU context all persist — the veil just
+          dips through black and clears the instant the room is ready. With
+          neighbors preloaded this is a quick dim, not a wall, and never a
+          re-engage gate. Always mounted; opacity-driven so it can transition. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black transition-opacity duration-300 ${
+          isLoading && !loadError ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        <Spinner size={28} className="text-white/80" />
+      </div>
+
+      {loadError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
           <div className="flex flex-col items-center gap-4 p-6 rounded-xl bg-zinc-900/90 border border-zinc-800">
-            {isLoading ? (
-              <>
-                <Spinner size={32} className="text-white" />
-                <p className="text-white text-sm">Loading room…</p>
-              </>
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">!</span>
-                </div>
-                <div className="text-center">
-                  <p className="text-red-400 text-sm font-medium">Failed to load room</p>
-                  <p className="text-zinc-400 text-xs mt-1 max-w-xs">{loadError}</p>
-                </div>
-              </>
-            )}
+            <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
+              <span className="text-white text-sm font-bold">!</span>
+            </div>
+            <div className="text-center">
+              <p className="text-red-400 text-sm font-medium">Failed to load room</p>
+              <p className="text-zinc-400 text-xs mt-1 max-w-xs">{loadError}</p>
+            </div>
           </div>
         </div>
       )}
@@ -135,6 +141,10 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
   const router = useRouter();
 
   const [room, setRoom] = useState<Room | null>(null);
+  // The id the loaded `room` belongs to. Tracked separately from the `roomId`
+  // prop so that, mid-transition, `world` is built from the room we're actually
+  // still rendering (the old one) — never the new id paired with stale data.
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const [spawn, setSpawn] = useState<Spawn>(null);
   const [roomError, setRoomError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
@@ -147,18 +157,26 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
 
   // Load the room for the current path id, and resolve the spawn entryway from the
   // URL fragment (#entryway). Re-runs whenever the room id changes.
+  //
+  // We do NOT null the old room first. Room-to-room moves are same-origin soft
+  // navigations (router.push, no document reload), so the <Canvas> below stays
+  // mounted the whole time — which means the WebGL context, the audio, and the
+  // pointer lock all survive the swap. Keeping the old room rendered until the
+  // new one's data is in flips the room over in a single atomic state update
+  // (room + id + spawn together) with no teardown, so the player never loses
+  // mouselook and resumes walking the instant the new collider loads. The brief
+  // splat/collider load is hidden by the cross-fade veil, not a re-engage gate.
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
-    setRoom(null);
-    setSpawn(null);
     setRoomError(undefined);
     loadRoom(`/rooms/${roomId}/room.json`)
       .then((r) => {
         if (cancelled) return;
-        setRoom(r);
         const ewId = entrywayIdFromHash(window.location.hash);
         const ew = resolveEntryway(r, ewId);
+        setRoom(r);
+        setLoadedId(roomId);
         setSpawn(ew ? { pos: ew.pos, yaw: ew.yaw, key: `${roomId}#${ew.id}` } : null);
       })
       .catch((e) => {
@@ -169,9 +187,37 @@ export default function RoomViewer({ roomId }: { roomId: string }) {
     return () => { cancelled = true; };
   }, [roomId]);
 
+  // Preload neighbors: warm the HTTP cache for each same-origin exit's room.json
+  // and its splat + collider, so walking through a door swaps in near-instantly
+  // (the scene's loaders hit cache instead of the network). Best-effort and
+  // fire-and-forget; dead/cross-origin links are skipped (the live nav handles
+  // them). Plain fetch() → works on any static host, no server needed.
+  useEffect(() => {
+    if (!room) return;
+    let cancelled = false;
+    (async () => {
+      for (const exit of room.exits) {
+        let target: URL;
+        try { target = new URL(exit.to, window.location.href); } catch { continue; }
+        if (target.origin !== window.location.origin) continue;
+        const slug = target.pathname.replace(/^\/+|\/+$/g, '').split('/').pop();
+        if (!slug) continue;
+        try {
+          const neighbor = await loadRoom(`/rooms/${slug}/room.json`);
+          if (cancelled) return;
+          void fetch(neighbor.splat_url).catch(() => {});
+          void fetch(neighbor.collider_url).catch(() => {});
+        } catch { /* missing/dead room — skip */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [room]);
+
   // Memoize so position/quaternion/scale keep stable references — otherwise
   // SplatWorld's load effect (and the collider build) re-fire every render.
-  const world = React.useMemo(() => (room ? roomToWorldDef(roomId, room) : null), [room, roomId]);
+  // Built from `loadedId` (the id the loaded room actually belongs to), so a
+  // mid-transition render never pairs the new id with the old room's assets.
+  const world = React.useMemo(() => (room && loadedId ? roomToWorldDef(loadedId, room) : null), [room, loadedId]);
   const exits = room?.exits ?? EMPTY_EXITS;
   const artifacts = room?.artifacts ?? EMPTY_ARTIFACTS;
   const onArtifactOpen = useCallback((url: string) => setOverlayUrl(url), []);

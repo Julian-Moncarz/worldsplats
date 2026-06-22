@@ -6,14 +6,12 @@
 //
 // Step 2 adds the data model + loader/validator. The runtime still browses the
 // WORLDS preset library; the manifest holds the real room-graph data that the
-// transitions work (step 3) will consume.
+// door-crossing work (step 3) will consume.
 
 export type Vec3 = [number, number, number];
 
 /** A spherical trigger volume in the room's local frame. */
 export type Volume = { pos: Vec3; radius: number };
-
-export type Transition = 'door' | 'elevator' | 'threshold';
 
 /**
  * A door: a directed edge to another room. Its `pos`+`yaw` is BOTH the trigger
@@ -24,7 +22,6 @@ export type Exit = {
   vol: Volume;
   yaw: number;
   to: string; // target room id
-  transition: Transition;
 };
 
 /** Opens `url` in a fullscreen overlay on gaze + proximity (§9, §11). */

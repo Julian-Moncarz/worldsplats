@@ -1,10 +1,10 @@
 'use client';
 
 // Door crossings. Lives inside the Canvas. Given the current room's exits (from
-// the manifest), it (1) draws a glowing marker at each door, (2) detects when the
-// player is near a door AND looking at it, reporting that door as "active" so a
-// DOM hint ("Press E to enter …") can show, and (3) crosses to the target room
-// when the interact key is pressed while a door is active.
+// the manifest), it (1) detects when the player is near a door AND looking at it,
+// reporting that door as "active" so a DOM hint ("Press E to enter …") can show,
+// and (2) crosses to the target room when the interact key is pressed while a
+// door is active. No visual marker — the doorway in the splat model IS the door.
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -90,39 +90,5 @@ export default function DoorCrossing({
     return () => window.removeEventListener('keydown', onKey);
   }, [onCross, setActive]);
 
-  return (
-    <>
-      {exits.map((e, i) => {
-        const r = e.vol.radius || 1.3;
-        return (
-          <group key={i} position={[e.vol.pos[0], e.vol.pos[1], e.vol.pos[2]]}>
-            {/* glowing translucent pillar */}
-            <mesh position={[0, 0, 0]}>
-              <cylinderGeometry args={[0.28, 0.28, 2.6, 24, 1, true]} />
-              <meshBasicMaterial
-                color="#39d0ff"
-                transparent
-                opacity={0.3}
-                side={THREE.DoubleSide}
-                toneMapped={false}
-                depthWrite={false}
-              />
-            </mesh>
-            {/* ring near the floor marking the trigger radius */}
-            <mesh position={[0, -0.95, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[r * 0.55, r * 0.7, 40]} />
-              <meshBasicMaterial
-                color="#39d0ff"
-                transparent
-                opacity={0.5}
-                side={THREE.DoubleSide}
-                toneMapped={false}
-                depthWrite={false}
-              />
-            </mesh>
-          </group>
-        );
-      })}
-    </>
-  );
+  return null;
 }

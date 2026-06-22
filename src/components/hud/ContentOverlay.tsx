@@ -1,11 +1,13 @@
 'use client';
 
-// A content artifact opens here: a fullscreen overlay over the canvas. The 3D
+// A content artifact opens here: the page, fullscreen, over the canvas. The 3D
 // world is paused (the player controller ignores input while pointer-lock is
 // released), not destroyed — closing returns you exactly where you were. Closing
-// (✕ or Esc) re-acquires pointer-lock in the same gesture, so mouse-look resumes
-// immediately with no extra click. (Lock was released programmatically on open,
-// not via a user Esc, so the browser allows the immediate re-lock.)
+// (the ✕ or Esc) re-acquires pointer-lock in the same gesture, so mouse-look
+// resumes immediately with no extra click.
+//
+// We keep a small floating ✕ rather than going fully chromeless: once you click
+// into a cross-origin iframe, key events go to it, so Esc alone can't be relied on.
 
 import { useCallback, useEffect } from 'react';
 import { usePointerLock } from '@/providers/pointerLock';
@@ -28,20 +30,15 @@ export default function ContentOverlay({ url, onClose }: { url: string; onClose:
   }, [close]);
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-black">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-zinc-900 px-4 py-2 text-sm">
-        <span className="truncate text-zinc-400">{url}</span>
-        <div className="flex shrink-0 items-center gap-3">
-          <a href={url} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-white">open ↗</a>
-          <button
-            onClick={close}
-            className="rounded px-2 py-1 text-zinc-300 hover:bg-white/10 hover:text-white"
-          >
-            ✕ close (Esc)
-          </button>
-        </div>
-      </div>
-      <iframe src={url} className="w-full flex-1 bg-white" title="content" />
+    <div className="absolute inset-0 z-30 bg-black">
+      <iframe src={url} className="h-full w-full border-0 bg-white" title="content" />
+      <button
+        onClick={close}
+        aria-label="Close (Esc)"
+        className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80"
+      >
+        ✕
+      </button>
     </div>
   );
 }

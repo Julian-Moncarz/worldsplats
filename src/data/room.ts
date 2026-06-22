@@ -71,15 +71,28 @@ export function entrywayIdFromHash(hash: string): string | null {
   return h.length ? h : null;
 }
 
-export async function loadRoom(id: string): Promise<Room> {
-  const res = await fetch(`/rooms/${id}.json`);
+/**
+ * Load a room from its room.json URL. Asset URLs inside are resolved RELATIVE TO
+ * the room.json's own URL — so a room is a portable unit: assets can sit next to
+ * it (`./study.spz`), live on object storage (`https://r2.../study.spz`), or point
+ * at the World Labs CDN. The viewer never cares where the bytes are.
+ */
+export async function loadRoom(url: string): Promise<Room> {
+  const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Failed to load room "${id}": ${res.status} ${res.statusText}`);
+    throw new Error(`Failed to load room "${url}": ${res.status} ${res.statusText}`);
   }
   const room = (await res.json()) as Room;
   if (!room.splat_url || !room.collider_url) {
-    throw new Error(`room "${id}" is missing splat_url/collider_url`);
+    throw new Error(`room "${url}" is missing splat_url/collider_url`);
   }
+  const base = new URL(url, window.location.href);
+  const abs = (u: string | null | undefined) => (u ? new URL(u, base).href : u ?? null);
+  room.splat_url = abs(room.splat_url) as string;
+  room.collider_url = abs(room.collider_url) as string;
+  room.music_url = abs(room.music_url);
+  room.pano_url = abs(room.pano_url);
+  room.thumbnail_url = abs(room.thumbnail_url);
   room.entryways ??= [];
   room.exits ??= [];
   room.artifacts ??= [];

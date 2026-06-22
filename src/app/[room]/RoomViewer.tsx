@@ -1,20 +1,19 @@
 'use client';
 
-// One room = one URL. This route renders the room named by the path (/r/<id>),
-// spawning the player at the entryway named by the URL fragment (/r/<id>#<entryway>,
-// default if absent). Exits are hyperlinks: same-museum links navigate client-side;
-// cross-museum (different origin) links do a full navigation. There is no manifest
-// and no "museum" object — the graph is emergent from linked rooms.
+// The room viewer. Renders the room named by the path (/<room>/), spawning the
+// player at the entryway named by the URL fragment (/<room>/#<entryway>, default
+// if absent). Exits are hyperlinks: same-origin links navigate client-side (smooth
+// room-to-room); cross-origin (another museum) links do a full navigation. There
+// is no manifest and no "museum" object — the graph is emergent from linked rooms.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { RapierProvider } from '@/physics';
 import { Spinner, VolumeMaxLine, VolumeXLine, HomeLine } from '@/icons';
 
 import WorldScene from '@/components/scene/WorldScene';
 import { usePointerLock } from '@/providers/pointerLock';
 import { useAudio } from '@/providers/audio';
-import { useEdit } from '@/providers/edit';
 import EditHud from '@/components/edit/EditHud';
 import {
   loadRoom,
@@ -142,10 +141,8 @@ function ShootHotkey({ shootRef }: { shootRef: React.RefObject<ShootHandle | nul
   return null;
 }
 
-export default function RoomPage() {
-  const params = useParams();
+export default function RoomViewer({ roomId }: { roomId: string }) {
   const router = useRouter();
-  const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
 
   const [object] = useState<ObjectDef>(OBJECTS[0]);
   const [room, setRoom] = useState<Room | null>(null);
@@ -161,18 +158,18 @@ export default function RoomPage() {
   // Load the room for the current path id, and resolve the spawn entryway from the
   // URL fragment (#entryway). Re-runs whenever the room id changes.
   useEffect(() => {
-    if (!id) return;
+    if (!roomId) return;
     let cancelled = false;
     setRoom(null);
     setSpawn(null);
     setRoomError(undefined);
-    loadRoom(id)
+    loadRoom(`/rooms/${roomId}/room.json`)
       .then((r) => {
         if (cancelled) return;
         setRoom(r);
         const ewId = entrywayIdFromHash(window.location.hash);
         const ew = resolveEntryway(r, ewId);
-        setSpawn(ew ? { pos: ew.pos, yaw: ew.yaw, key: `${id}#${ew.id}` } : null);
+        setSpawn(ew ? { pos: ew.pos, yaw: ew.yaw, key: `${roomId}#${ew.id}` } : null);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -180,20 +177,19 @@ export default function RoomPage() {
         setRoomError(e instanceof Error ? e.message : String(e));
       });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [roomId]);
 
   // Memoize so position/quaternion/scale keep stable references — otherwise
   // SplatWorld's load effect (and the collider build) re-fire every render.
-  const world = React.useMemo(() => (room ? roomToWorldDef(id, room) : null), [room, id]);
+  const world = React.useMemo(() => (room ? roomToWorldDef(roomId, room) : null), [room, roomId]);
   const exits = room?.exits ?? EMPTY_EXITS;
 
-  // Follow an exit's link. Same-origin /r/ links navigate client-side (the page
-  // re-renders with the new id + fragment); anything else is a full navigation
-  // (cross-museum). Dead links just 404 — acceptable by design.
+  // Follow an exit's link. Same-origin links navigate client-side (smooth room
+  // swap); other origins do a full navigation (cross-museum). Dead links 404 —
+  // acceptable by design.
   const onExit = useCallback((to: string) => {
     const url = new URL(to, window.location.href);
-    const sameApp = url.origin === window.location.origin && url.pathname.startsWith('/r/');
-    if (sameApp) {
+    if (url.origin === window.location.origin) {
       router.push(url.pathname + url.hash);
     } else {
       window.location.href = url.href;
@@ -216,7 +212,7 @@ export default function RoomPage() {
           <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
             <span className="text-white text-sm font-bold">!</span>
           </div>
-          <p className="text-sm text-zinc-300">Room “{id}” couldn’t be loaded.</p>
+          <p className="text-sm text-zinc-300">Room “{roomId}” couldn’t be loaded.</p>
           <p className="text-xs text-zinc-500 max-w-xs">{roomError}</p>
         </div>
       </div>

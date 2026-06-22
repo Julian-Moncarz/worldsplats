@@ -1,11 +1,18 @@
 'use client';
 
-// Edit mode: the viewer's authoring flag, set by the URL query `?edit=1` (or just
-// `?edit`). It writes nothing — it adds a live, copyable pos+yaw HUD, a "beam"
+// Edit mode: the viewer's authoring flag. It's a property of the running INSTANCE,
+// not the request — so a published museum can't be flipped into edit mode by a
+// visitor. Turn it on with `npm run edit` (sets NEXT_PUBLIC_EDIT_MODE=1). As a
+// dev-only convenience, `?edit=1` in the URL still works when not in production;
+// production builds have no edit mode at all.
+//
+// Edit mode writes nothing — it adds a live, copyable pos+yaw HUD, a "beam"
 // raycast for marking artifacts, and a no-clip "specter" fly (toggle Z) so you can
 // reach any spot to mark entryways/exits, then hand the coordinates to Claude.
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+
+const ENV_EDIT = process.env.NEXT_PUBLIC_EDIT_MODE === '1';
 
 export type LiveCoords = {
   pos: [number, number, number];
@@ -44,10 +51,14 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
     setSpecter(specterRef.current);
   };
 
-  // Read the edit flag from the URL after mount (avoids SSR hydration mismatch).
+  // Resolve the edit flag after mount (avoids SSR hydration mismatch). The env
+  // flag is the source of truth; the URL query is a dev-only convenience.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setEditMode(params.get('edit') === '1' || params.has('edit'));
+    if (ENV_EDIT) { setEditMode(true); return; }
+    if (process.env.NODE_ENV !== 'production') {
+      const params = new URLSearchParams(window.location.search);
+      setEditMode(params.get('edit') === '1' || params.has('edit'));
+    }
   }, []);
 
   return (

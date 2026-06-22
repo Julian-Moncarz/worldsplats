@@ -1,16 +1,14 @@
 'use client';
 
 // Edit mode: the viewer's authoring flag. It's a property of the running INSTANCE,
-// not the request — so a published museum can't be flipped into edit mode by a
-// visitor. Turn it on with `npm run edit` (sets NEXT_PUBLIC_EDIT_MODE=1). As a
-// dev-only convenience, `?edit=1` in the URL still works when not in production;
-// production builds have no edit mode at all.
+// not the request — so a published museum simply has no edit mode and a visitor
+// can't flip it on. Turn it on with `npm run edit` (sets NEXT_PUBLIC_EDIT_MODE=1).
 //
 // Edit mode writes nothing — it adds a live, copyable pos+yaw HUD, a "beam"
 // raycast for marking artifacts, and a no-clip "specter" fly (toggle Z) so you can
 // reach any spot to mark entryways/exits, then hand the coordinates to Claude.
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 
 const ENV_EDIT = process.env.NEXT_PUBLIC_EDIT_MODE === '1';
 
@@ -41,7 +39,9 @@ type EditCtx = {
 const Ctx = createContext<EditCtx | null>(null);
 
 export function EditProvider({ children }: { children: React.ReactNode }) {
-  const [editMode, setEditMode] = useState(false);
+  // The flag is inlined identically on server + client, so seeding state with it
+  // is hydration-safe — no effect needed.
+  const [editMode] = useState(ENV_EDIT);
   const liveRef = useRef<LiveCoords>({ pos: [0, 0, 0], yaw: 0, pitch: 0, hasBody: false });
   const [lastCopied, setLastCopied] = useState<string | null>(null);
   const [specter, setSpecter] = useState(false);
@@ -50,16 +50,6 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
     specterRef.current = !specterRef.current;
     setSpecter(specterRef.current);
   };
-
-  // Resolve the edit flag after mount (avoids SSR hydration mismatch). The env
-  // flag is the source of truth; the URL query is a dev-only convenience.
-  useEffect(() => {
-    if (ENV_EDIT) { setEditMode(true); return; }
-    if (process.env.NODE_ENV !== 'production') {
-      const params = new URLSearchParams(window.location.search);
-      setEditMode(params.get('edit') === '1' || params.has('edit'));
-    }
-  }, []);
 
   return (
     <Ctx.Provider value={{ editMode, liveRef, lastCopied, setLastCopied, specter, specterRef, toggleSpecter }}>

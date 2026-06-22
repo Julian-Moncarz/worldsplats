@@ -179,7 +179,9 @@ export default function RoomPage() {
     return () => { cancelled = true; };
   }, [id]);
 
-  const world = room ? roomToWorldDef(id, room) : null;
+  // Memoize so position/quaternion/scale keep stable references — otherwise
+  // SplatWorld's load effect (and the collider build) re-fire every render.
+  const world = React.useMemo(() => (room ? roomToWorldDef(id, room) : null), [room, id]);
   const exits = room?.exits ?? EMPTY_EXITS;
 
   // Follow an exit's link. Same-origin /r/ links navigate client-side (the page

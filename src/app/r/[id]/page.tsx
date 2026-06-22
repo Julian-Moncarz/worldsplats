@@ -35,12 +35,14 @@ const EMPTY_EXITS: Exit[] = [];
 
 type Spawn = { pos: [number, number, number]; yaw: number; key: string } | null;
 
-// Full-screen click catcher. The world renders immediately (no enter modal), but
-// browsers require a user gesture before pointer-lock + audio, so the first click
-// anywhere engages look controls and starts sound.
+// The world renders immediately — the user is "in the room" on page load. But
+// browsers require a user gesture before pointer-lock + audio can start, so the
+// FIRST interaction the user makes anyway (any click, or the first WASD keypress)
+// silently engages look controls and starts sound. No button, no prompt.
 function ClickToEngage({ isLoading, loadError }: { isLoading: boolean; loadError?: string }) {
   const { isLocked, lock } = usePointerLock();
   const { init } = useAudio();
+  const blocked = isLocked || isLoading || !!loadError;
 
   const engage = useCallback(async () => {
     try { await init(); } catch (e) { console.error('Failed to initialize audio:', e); }
@@ -55,18 +57,19 @@ function ClickToEngage({ isLoading, loadError }: { isLoading: boolean; loadError
     lock({ unadjustedMovement: false });
   }, [init, lock]);
 
-  if (isLocked || isLoading || loadError) return null;
+  // First keypress is a valid user gesture too — engage on it so movement keys
+  // double as the "enter" action and the mouse grabs without a separate click.
+  useEffect(() => {
+    if (blocked) return;
+    const onKey = () => { void engage(); };
+    window.addEventListener('keydown', onKey, { once: true });
+    return () => window.removeEventListener('keydown', onKey);
+  }, [blocked, engage]);
 
-  return (
-    <button
-      onClick={engage}
-      className="absolute inset-0 z-20 flex items-end justify-center bg-transparent pb-16 text-center"
-    >
-      <span className="rounded-md border border-white/15 bg-black/60 px-4 py-2 text-sm text-zinc-200 backdrop-blur">
-        Click to explore · WASD to move · look with the mouse
-      </span>
-    </button>
-  );
+  if (blocked) return null;
+
+  // Invisible full-screen catcher: the first click anywhere engages, no label.
+  return <button onClick={engage} aria-label="Enter room" className="absolute inset-0 z-20 bg-transparent" />;
 }
 
 // On-screen "Press E" hint, shown while playing and near an exit.

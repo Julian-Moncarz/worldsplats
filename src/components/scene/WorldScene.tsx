@@ -10,6 +10,7 @@ import SplatWorld from '@/components/spark/SplatWorld';
 import PlayerController from '@/components/controls/PlayerController';
 import PointerLockBridge from '@/components/scene/PointerLockBridge';
 import TouchLookController from '@/components/controls/TouchLookController';
+import EditCapture from '@/components/edit/EditCapture';
 import type { WorldDef, ObjectDef } from '@/data/presets';
 
 export type ShootHandle = {
@@ -88,6 +89,9 @@ function SceneInner({
     <>
       {/* FPS-style player controls */}
       <PlayerController mobileInputRef={inputRef} moveSpeed={playerMoveSpeed} />
+
+      {/* Edit-mode marking capture (no-op unless ?edit=1) */}
+      <EditCapture />
 
       {/* Touch-based camera look for mobile */}
       <TouchLookController />

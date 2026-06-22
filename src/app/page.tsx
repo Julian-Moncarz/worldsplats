@@ -8,6 +8,8 @@ import { Spinner, VolumeMaxLine, VolumeXLine, HomeLine } from "@/icons";
 import WorldScene from "@/components/scene/WorldScene";
 import { PointerLockProvider, usePointerLock } from '@/providers/pointerLock';
 import { AudioProvider, useAudio } from '@/providers/audio';
+import { EditProvider } from '@/providers/edit';
+import EditHud from '@/components/edit/EditHud';
 //const WorldScene = dynamic(() => import('@/components/scene/WorldScene'), { ssr: false });
 type ShootHandle = { shoot: () => void; clear: () => void; };
 import { WORLDS, OBJECTS, type WorldDef, type ObjectDef } from '@/data/presets';
@@ -259,6 +261,9 @@ function PageContent() {
       {/* Reticle + loading overlays + mute button */}
       <RootUIOverlays isLoading={isLoading} loadError={loadError} />
 
+      {/* Edit-mode HUD (only renders when ?edit=1) */}
+      <EditHud currentWorldId={world.id} />
+
       {/* Mobile controls */}
       <MobileHud mobileInputRef={mobileInputRef} />
 
@@ -273,7 +278,9 @@ export default function Page() {
   return (
     <PointerLockProvider>
       <AudioProvider>
-        <PageContent />
+        <EditProvider>
+          <PageContent />
+        </EditProvider>
       </AudioProvider>
     </PointerLockProvider>
   );

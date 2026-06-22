@@ -30,6 +30,7 @@ type Props = {
   mobileInputRef?: React.MutableRefObject<{x:number;y:number}>;
   exits?: Exit[];
   onCross?: (to: string) => void;
+  onActiveExitChange?: (to: string | null) => void;
 };
 
 type Spawned = {
@@ -49,7 +50,8 @@ function SceneInner({
   onLoadingChange,
   mobileInputRef,
   exits,
-  onCross }: Props) {
+  onCross,
+  onActiveExitChange }: Props) {
   const { camera } = useThree();
   const [spawned, setSpawned] = useState<Spawned[]>([]);
   const speedRef = useRef(projectileSpeed);
@@ -100,7 +102,13 @@ function SceneInner({
       <EditCapture />
 
       {/* Door crossings between manifest rooms */}
-      {exits && onCross && <DoorCrossing exits={exits} onCross={onCross} />}
+      {exits && onCross && (
+        <DoorCrossing
+          exits={exits}
+          onCross={onCross}
+          onActiveChange={onActiveExitChange ?? (() => {})}
+        />
+      )}
 
       {/* Touch-based camera look for mobile */}
       <TouchLookController />
@@ -141,7 +149,8 @@ export default function WorldScene({
   onLoadingChange,
   mobileInputRef,
   exits,
-  onCross }: Props) {
+  onCross,
+  onActiveExitChange }: Props) {
   const handleLoadingChange = useCallback((loading: boolean, error?: string) => {
     onLoadingChange?.(loading, error);
   }, [onLoadingChange]);
@@ -194,6 +203,7 @@ export default function WorldScene({
         mobileInputRef={mobileInputRef}
         exits={exits}
         onCross={onCross}
+        onActiveExitChange={onActiveExitChange}
       />
     </Canvas>
     </div>

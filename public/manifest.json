@@ -2,7 +2,7 @@
   "world": {
     "title": "Explorable Site",
     "start_room": "study-room",
-    "audio_defaults": { "music_volume": 0.25, "loop": true }
+    "audio_defaults": { "music_volume": 0.25 }
   },
   "rooms": {
     "study-room": {

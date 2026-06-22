@@ -54,7 +54,7 @@ export type Manifest = {
   world: {
     title: string;
     start_room: string;
-    audio_defaults: { music_volume: number; loop: boolean };
+    audio_defaults: { music_volume: number };
   };
   rooms: Record<string, Room>;
 };

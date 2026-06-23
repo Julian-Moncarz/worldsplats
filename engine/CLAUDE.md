@@ -13,6 +13,11 @@ linked by hrefs) — there is no manifest and no global "museum" object.
 It builds to a **static export** (`output: 'export'`) — no server, hostable on any
 static host.
 
+> Content (`public/rooms`, `public/worlds`, `public/music`) is **not** authored
+> here — the repo root holds the source of truth (`../rooms`, `../worlds`,
+> `../music`) and the `promenade` CLI mirrors it into `public/` (gitignored)
+> before dev/build. Deploy config is read from `../promenade.config.json`.
+
 ## Development commands
 
 - `npm run dev` — dev server (http://localhost:3000; `/` redirects to the landing room)
@@ -41,7 +46,9 @@ A room is `public/rooms/<slug>/room.json`. Types:
 - `app/[room]/RoomViewer.tsx` — the client viewer: loads the room, resolves the
   spawn entryway from `location.hash`, renders the scene, handles exits (client
   nav same-origin, full nav cross-origin).
-- `app/page.tsx` — client redirect to `LANDING_ROOM` (`src/data/site.ts`).
+- `app/page.tsx` — server component that bakes in `LANDING_ROOM`
+  (`src/data/site.ts`, read from `../promenade.config.json`) and renders
+  `LandingRedirect.tsx`, a tiny client redirect (static export has no server).
 - `app/providers.tsx` — PointerLock / Audio / Edit providers (in the root layout).
 
 ## Rendering & physics

@@ -13,12 +13,22 @@ There is no manifest and no central "museum" object; the graph is emergent.
 
 ```
 promenade/
-├── engine/        the renderer — a content-free Next.js viewer (Spark + R3F + Rapier)
-│   └── public/    the content: rooms/<slug>/room.json + worlds/ (splats) + music/
-├── scripts/       gen_world.py — generates a room from a text prompt (World Labs Marble)
-├── generated/     raw Marble world.json per room (provenance)
-└── skill.md       the authoring guide — how rooms get made, marked, linked, shipped
+├── promenade.config.json   deploy config (landing room, base path, site title)
+├── rooms/<slug>/room.json  the rooms — one folder, one URL (/<slug>/)
+├── worlds/                 splats + colliders (.spz / .glb)
+├── music/                  per-room loopable tracks
+├── engine/                 the renderer — a content-free Next.js viewer (Spark + R3F + Rapier)
+├── bin/promenade.mjs       the CLI (the npm scripts alias it)
+├── schema/                 room.json JSON Schema (editor autocomplete + `promenade check`)
+├── scripts/                gen_world.py — generates a room from a prompt (World Labs Marble)
+├── generated/              raw Marble world.json per room (provenance)
+└── skill.md                the authoring guide — how rooms get made, marked, linked, shipped
 ```
+
+Your **project** is the repo root (`promenade.config.json` + `rooms/`, `worlds/`,
+`music/`); `engine/` is the content-free renderer — the split every SSG makes.
+The CLI mirrors your content into `engine/public/` (a gitignored build artifact)
+so Next can serve and enumerate it; you never edit there.
 
 The renderer is a **deep module**: its only input is a `room.json` (by URL). It
 knows nothing about museums, hosting, or how the assets were made. See
@@ -28,7 +38,8 @@ internals, and [`skill.md`](skill.md) for the end-to-end authoring pipeline.
 ## CLI
 
 Like other static site generators (Hugo, Astro, Eleventy), Promenade exposes a
-small set of verbs from the repo root:
+small set of verbs through one CLI (`bin/promenade.mjs`). Run them as
+`promenade <verb>` or via the `npm run` aliases below:
 
 | Command            | What it does                                                                 |
 | :----------------- | :-------------------------------------------------------------------------- |
@@ -36,10 +47,11 @@ small set of verbs from the repo root:
 | `npm run new`      | Generate a room from a prompt (World Labs Marble). See below.               |
 | `npm run dev`      | Dev server with the viewer (http://localhost:3000).                         |
 | `npm run edit`     | Dev server with **edit mode** on — for marking spawn/door/artifact coords.  |
+| `npm run check`    | Validate every `rooms/*/room.json` against the schema.                      |
 | `npm run build`    | Static export to `engine/out` — deploy this folder anywhere.                |
 | `npm run serve`    | Serve the built `engine/out` at http://localhost:8000.                      |
 | `npm run preview`  | `build` then `serve`.                                                       |
-| `npm run clean`    | Remove build output (`engine/.next`, `engine/out`).                         |
+| `npm run clean`    | Remove build output + the synced mirror.                                    |
 
 ### Generating a room
 
@@ -50,9 +62,9 @@ npm run new -- "a cozy wood-paneled library, warm lamplight" --slug library --na
 ```
 
 This calls World Labs Marble, downloads the splat (`.spz`) + collider (`.glb`)
-into `engine/public/worlds/`, saves the raw world object under `generated/<slug>/`,
-and writes a `room.json` skeleton to `engine/public/rooms/<slug>/`. Use
-`--model marble-1.0-draft` (the default) while iterating — it's cheap (~$1.26).
+into `worlds/`, saves the raw world object under `generated/<slug>/`, and writes a
+`room.json` skeleton to `rooms/<slug>/`. Use `--model marble-1.0-draft` (the
+default) while iterating — it's cheap (~$1.26).
 
 Then mark coordinates and wire the room up — see [`skill.md`](skill.md).
 

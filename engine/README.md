@@ -91,9 +91,14 @@ coordinates:
 
 ## Adding a room
 
+> In the Promenade project the content source of truth is the **repo root**
+> (`../rooms`, `../worlds`, `../music`); the `promenade` CLI mirrors it into this
+> engine's `public/` (gitignored) at dev/build. The paths below describe what the
+> engine reads — author at the repo root, not in `public/`.
+
 1. Put the assets where they'll be served (object storage like R2 is recommended
    for the big `.spz`/`.glb`; or colocate them in the room folder).
-2. Create `public/rooms/<slug>/room.json` (format above). Mark entryways/exits in
+2. Create `rooms/<slug>/room.json` (format above). Mark entryways/exits in
    edit mode (`npm run edit`, fly with Z, copy with C).
 3. `npm run build` → `/<slug>/` is live. Link to it from another room's exit.
 

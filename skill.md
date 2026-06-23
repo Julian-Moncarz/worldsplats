@@ -23,7 +23,8 @@ museum**. Generation is automated; curation and placement are human-in-the-loop.
 A museum is just **rooms linked by exits** — like web pages linked by `href`s.
 There is no manifest and no central "museum" object; the graph is emergent.
 
-A room is `engine/public/rooms/<slug>/room.json`:
+A room is `rooms/<slug>/room.json` (at the repo root; the CLI mirrors it into
+`engine/public/` at build):
 
 ```jsonc
 {
@@ -58,9 +59,9 @@ A room is `engine/public/rooms/<slug>/room.json`:
    npm run new -- "<prompt>" --slug <slug> --name "<Name>"
    ```
 
-   Downloads splat/collider into `engine/public/worlds/` and writes an
-   `engine/public/rooms/<slug>/room.json` skeleton (empty entryways/exits/
-   artifacts). Use `--model marble-1.0-draft` while iterating.
+   Downloads splat/collider into `worlds/` and writes a `rooms/<slug>/room.json`
+   skeleton (empty entryways/exits/artifacts). Use `--model marble-1.0-draft`
+   while iterating.
 4. ✋ **Mark coordinates** — `npm run edit`, open `/<slug>/`:
 
    * **C** copies a floor-snapped spawn (`pos`+`yaw`) → an entryway.
@@ -72,8 +73,8 @@ A room is `engine/public/rooms/<slug>/room.json`:
 5. **Wire it** — Claude writes `entryways`/`exits`/`artifacts` into `room.json`.
    Exits use **relative** links `../<other>/#<entryway>`; add the reciprocal door
    in the other room (a two-way link is two exits + two entryways).
-6. ✋ *(optional)* **Music** — `yt-dlp` a quiet loopable track into
-   `engine/public/music/`; set `music_url`.
+6. ✋ *(optional)* **Music** — `yt-dlp` a quiet loopable track into `music/`; set
+   `music_url`.
 7. ✋ *(per artifact)* **Build the styled page** the artifact opens; set its `url`.
 8. **Publish** — mirror the big assets to R2 (durable) and rewrite the `room.json`
    URLs to point there; then `npm run build` and deploy `engine/out/`

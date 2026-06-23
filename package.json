@@ -1,36 +1,18 @@
 {
-  "name": "wl-practice",
+  "name": "promenade",
   "version": "0.1.0",
   "private": true,
+  "description": "A static site generator for walkable Gaussian-splat museums. Generate a 3D room per section, link rooms with doorways, publish a static walkable site.",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "edit": "NEXT_PUBLIC_EDIT_MODE=1 next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
+    "setup": "npm --prefix engine install",
+    "new": "uv run --with requests --with trimesh scripts/gen_world.py",
+    "dev": "npm --prefix engine run dev",
+    "edit": "npm --prefix engine run edit",
+    "build": "npm --prefix engine run build",
+    "serve": "cd engine/out && python3 -m http.server 8000",
+    "preview": "npm run build && npm run serve",
+    "lint": "npm --prefix engine run lint",
+    "clean": "rm -rf engine/.next engine/out"
   },
-  "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.12.0",
-    "@react-three/drei": "^10.7.6",
-    "@react-three/fiber": "^9.3.0",
-    "@react-three/rapier": "^2.1.0",
-    "@sparkjsdev/spark": "^0.1.8",
-    "@types/three": "^0.180.0",
-    "next": "15.5.3",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "three": "^0.174.0",
-    "clsx": "^1.2.1"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+  "license": "MIT"
 }

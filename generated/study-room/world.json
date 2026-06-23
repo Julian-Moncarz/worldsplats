@@ -1,0 +1,37 @@
+{
+  "world_id": "9ae51737-ae32-473f-b7f8-609687b0a1c2",
+  "display_name": "step-one-test-room",
+  "tags": null,
+  "assets": {
+    "mesh": {
+      "collider_mesh_url": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/d7ecf823.glb"
+    },
+    "imagery": {
+      "pano_url": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/93016f09-02cf-485c-ad21-193df8932275_pano/rgb_0.png"
+    },
+    "splats": {
+      "spz_urls": {
+        "500k": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/3f7dd9f5-296e-4149-94a2-cd452b10e912_sand_500k.spz",
+        "100k": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/786a04a8-fe16-4e72-bb49-8ced5ed3ca20_sand_100k.spz",
+        "full_res": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/2bac1f48-3c68-4cd7-99e4-70f0f8215bf5_sand.spz"
+      },
+      "semantics_metadata": null
+    },
+    "thumbnail_url": "https://cdn.marble.worldlabs.ai/9ae51737-ae32-473f-b7f8-609687b0a1c2/4ea5111b-a2c7-4e54-a6f8-98a34ef9d901_sand_mpi/thumbnail.webp",
+    "caption": "The scene is a cozy, small, enclosed study room interior, captured in a photographic style, exuding a warm and inviting atmosphere. The room is illuminated by the soft glow of warm lamp light, creating a comfortable ambiance. A polished wooden floor stretches across the entire space, reflecting the gentle illumination. A sturdy wooden desk is positioned against one of the walls, serving as a central workspace. Above the desk, a series of bookshelves are meticulously arranged, filled with an assortment of books, suggesting a well-read occupant. The room is fully enclosed by four walls, providing a sense of privacy and solitude. One open doorway offers an inviting entrance into the study. The wooden desk is situated along the far wall, directly beneath the lowest shelf of the bookshelves. The bookshelves extend upwards, covering a significant portion of the wall above the desk. The open doorway is located on the wall to the right of the desk, providing access to the room. "
+  },
+  "created_at": "2026-06-22T01:34:51Z",
+  "updated_at": "2026-06-22T01:35:16Z",
+  "permission": {
+    "public": false,
+    "allowed_readers": [],
+    "allowed_writers": [],
+    "allow_id_access": false
+  },
+  "world_prompt": {
+    "text_prompt": "The scene is a cozy, small, enclosed study room interior, captured in a photographic style, exuding a warm and inviting atmosphere. The room is illuminated by the soft glow of warm lamp light, creating a comfortable ambiance. A polished wooden floor stretches across the entire space, reflecting the gentle illumination. A sturdy wooden desk is positioned against one of the walls, serving as a central workspace. Above the desk, a series of bookshelves are meticulously arranged, filled with an assortment of books, suggesting a well-read occupant. The room is fully enclosed by four walls, providing a sense of privacy and solitude. One open doorway offers an inviting entrance into the study. The wooden desk is situated along the far wall, directly beneath the lowest shelf of the bookshelves. The bookshelves extend upwards, covering a significant portion of the wall above the desk. The open doorway is located on the wall to the right of the desk, providing access to the room. The 360 scene is faultless.",
+    "type": "text"
+  },
+  "world_marble_url": "https://marble.worldlabs.ai/world/9ae51737-ae32-473f-b7f8-609687b0a1c2",
+  "model": "marble-1.0-draft"
+}

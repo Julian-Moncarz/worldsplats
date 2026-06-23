@@ -1,0 +1,37 @@
+{
+  "world_id": "81cd42cf-a71e-43c1-8c38-0ef5980ad963",
+  "display_name": "library (step 3)",
+  "tags": null,
+  "assets": {
+    "mesh": {
+      "collider_mesh_url": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/d7e938f2.glb"
+    },
+    "imagery": {
+      "pano_url": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/2864b3d2-e3fd-456e-8ee5-c9217f04ae20_pano/rgb_0.png"
+    },
+    "splats": {
+      "spz_urls": {
+        "500k": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/886dbf3c-ba6c-43d1-be0d-d9ba2d96dc00_sand_500k.spz",
+        "100k": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/97dfacd9-2a31-4172-8f3e-9d47f6d7431b_sand_100k.spz",
+        "full_res": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/284ccefb-fb64-4827-a02f-e34b43eb5f29_sand.spz"
+      },
+      "semantics_metadata": null
+    },
+    "thumbnail_url": "https://cdn.marble.worldlabs.ai/81cd42cf-a71e-43c1-8c38-0ef5980ad963/58fca443-837d-439b-b377-c0980f96e8e8_sand_mpi/thumbnail.webp",
+    "caption": "The scene is a photorealistic depiction of a cozy personal library room, exuding a warm and inviting evening ambiance. The room is fully enclosed by four walls, each meticulously lined with floor-to-ceiling dark wooden bookshelves. These shelves are densely packed with an eclectic array of colorful books, their spines creating a vibrant mosaic against the rich wood. A rolling library ladder, crafted from matching dark wood, is positioned against one of the bookshelves, suggesting easy access to the highest literary treasures. A worn, dark leather reading armchair, its surface softened by years of use, is nestled comfortably beside a small, round side table. Upon this table rests a lamp emitting a warm, soft glow, casting a gentle illumination over the immediate area. The floor is covered with a patterned rug, its intricate design providing a visual anchor for the seating area, while the surrounding areas reveal polished hardwood flooring. A single open doorway is visible in one of the walls, offering a glimpse into an adjacent space. The bookshelves extend seamlessly around the entire perimeter of the room, creating an immersive literary environment. The rolling ladder is situated along the length of one bookshelf, ready for use. The armchair and side table are placed intimately together, forming a dedicated reading nook. The patterned rug lies beneath the armchair and side table, defining this comfortable zone. The open doorway is set into one of the walls, providing the only visible exit from the room. "
+  },
+  "created_at": "2026-06-22T14:58:59Z",
+  "updated_at": "2026-06-22T14:59:22Z",
+  "permission": {
+    "public": false,
+    "allowed_readers": [],
+    "allowed_writers": [],
+    "allow_id_access": false
+  },
+  "world_prompt": {
+    "text_prompt": "The scene is a photorealistic depiction of a cozy personal library room, exuding a warm and inviting evening ambiance. The room is fully enclosed by four walls, each meticulously lined with floor-to-ceiling dark wooden bookshelves. These shelves are densely packed with an eclectic array of colorful books, their spines creating a vibrant mosaic against the rich wood. A rolling library ladder, crafted from matching dark wood, is positioned against one of the bookshelves, suggesting easy access to the highest literary treasures. A worn, dark leather reading armchair, its surface softened by years of use, is nestled comfortably beside a small, round side table. Upon this table rests a lamp emitting a warm, soft glow, casting a gentle illumination over the immediate area. The floor is covered with a patterned rug, its intricate design providing a visual anchor for the seating area, while the surrounding areas reveal polished hardwood flooring. A single open doorway is visible in one of the walls, offering a glimpse into an adjacent space. The bookshelves extend seamlessly around the entire perimeter of the room, creating an immersive literary environment. The rolling ladder is situated along the length of one bookshelf, ready for use. The armchair and side table are placed intimately together, forming a dedicated reading nook. The patterned rug lies beneath the armchair and side table, defining this comfortable zone. The open doorway is set into one of the walls, providing the only visible exit from the room. The 360 scene is faultless.",
+    "type": "text"
+  },
+  "world_marble_url": "https://marble.worldlabs.ai/world/81cd42cf-a71e-43c1-8c38-0ef5980ad963",
+  "model": "marble-1.0-draft"
+}

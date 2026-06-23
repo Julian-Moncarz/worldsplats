@@ -11,6 +11,13 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 
+# Content mirror synced into the engine by the CLI. The repo root (rooms/,
+# worlds/, music/) is the source of truth; engine/public/{rooms,worlds,music}
+# is a build artifact.
+engine/public/rooms/
+engine/public/worlds/
+engine/public/music/
+
 # Secrets — keep the key out of git (see .env.example)
 .env
 .env.*

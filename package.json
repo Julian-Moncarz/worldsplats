@@ -3,16 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "description": "A static site generator for walkable Gaussian-splat museums. Generate a 3D room per section, link rooms with doorways, publish a static walkable site.",
+  "bin": {
+    "promenade": "bin/promenade.mjs"
+  },
   "scripts": {
-    "setup": "npm --prefix engine install",
-    "new": "uv run --with requests --with trimesh scripts/gen_world.py",
-    "dev": "npm --prefix engine run dev",
-    "edit": "npm --prefix engine run edit",
-    "build": "npm --prefix engine run build",
-    "serve": "cd engine/out && python3 -m http.server 8000",
-    "preview": "npm run build && npm run serve",
-    "lint": "npm --prefix engine run lint",
-    "clean": "rm -rf engine/.next engine/out"
+    "promenade": "node bin/promenade.mjs",
+    "setup": "node bin/promenade.mjs setup",
+    "new": "node bin/promenade.mjs new",
+    "dev": "node bin/promenade.mjs dev",
+    "edit": "node bin/promenade.mjs edit",
+    "check": "node bin/promenade.mjs check",
+    "build": "node bin/promenade.mjs build",
+    "serve": "node bin/promenade.mjs serve",
+    "preview": "node bin/promenade.mjs preview",
+    "clean": "node bin/promenade.mjs clean",
+    "lint": "npm --prefix engine run lint"
   },
   "license": "MIT"
 }

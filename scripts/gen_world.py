@@ -2,12 +2,16 @@
 """Minimal one-off Marble room generator.
 
 Generates a single room from a TEXT prompt, polls the operation, downloads the
-splat (.spz), collider (.glb), pano and thumbnail into engine/public/worlds/,
-and writes a room.json skeleton to engine/public/rooms/<slug>/room.json for the
-room primitive (engine/src/data/room.ts). Mark entryways/exits in edit mode after.
+splat (.spz), collider (.glb), pano and thumbnail into the repo-root worlds/,
+and writes a room.json skeleton to rooms/<slug>/room.json for the room primitive
+(engine/src/data/room.ts). Mark entryways/exits in edit mode after.
+
+The repo root holds the project's content (rooms/, worlds/, music/); the engine
+mirrors it into engine/public/ at dev/build time. `promenade new` runs that sync
+for you; if you call this script directly, run `promenade dev`/`edit` after.
 
 Usage:
-    npm run new -- "<text prompt>" --slug library --name "Library"
+    promenade new "<text prompt>" --slug library --name "Library"
     # or directly:
     uv run --with requests scripts/gen_world.py "<text prompt>" --slug library --name "Library"
 """
@@ -23,7 +27,7 @@ import requests
 
 BASE = "https://api.worldlabs.ai/marble/v1"
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "engine" / "public" / "worlds"
+OUT = ROOT / "worlds"
 
 
 def load_key() -> str:
@@ -115,12 +119,13 @@ def main() -> None:
 
     # Emit a room.json skeleton for the room primitive (src/data/room.ts). One
     # room = one folder = one pretty URL (/<slug>/). Assets are filled in;
-    # entryways/exits/artifacts are left empty for marking with `npm run edit`
+    # entryways/exits/artifacts are left empty for marking with `promenade edit`
     # (fly with Z, copy floor-snapped spots with C). With no entryways the
     # renderer best-effort searches for floor until you mark a "default" one.
-    room_dir = ROOT / "engine" / "public" / "rooms" / slug
+    room_dir = ROOT / "rooms" / slug
     room_dir.mkdir(parents=True, exist_ok=True)
     room = {
+        "$schema": "../../schema/room.schema.json",
         "display_name": args.name,
         "splat_url": saved.get("splat", f"/worlds/{slug}.spz"),
         "collider_url": saved.get("collider", f"/worlds/{slug}_collider.glb"),
@@ -133,7 +138,7 @@ def main() -> None:
     }
     room_path = room_dir / "room.json"
     room_path.write_text(json.dumps(room, indent=2) + "\n")
-    print(f"✓ room skeleton {room_path.relative_to(ROOT)} — run `npm run edit`, open /{slug}/ to mark it")
+    print(f"✓ room skeleton {room_path.relative_to(ROOT)} — run `promenade edit`, open /{slug}/ to mark it")
 
 
 if __name__ == "__main__":

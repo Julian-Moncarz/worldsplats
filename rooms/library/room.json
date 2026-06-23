@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schema/room.schema.json",
   "display_name": "Library",
   "splat_url": "/worlds/library.spz",
   "collider_url": "/worlds/library_collider.glb",

@@ -1,0 +1,55 @@
+{
+  "name": "otherplane",
+  "version": "0.1.2",
+  "description": "A static site generator for walkable Gaussian-splat museums. Generate a 3D room per section, link rooms with doorways, publish a static walkable site.",
+  "keywords": [
+    "gaussian-splatting",
+    "static-site-generator",
+    "3d",
+    "webgl",
+    "three-js",
+    "spark",
+    "worldlabs",
+    "marble",
+    "museum"
+  ],
+  "homepage": "https://github.com/Julian-Moncarz/otherplane#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Julian-Moncarz/otherplane.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Julian-Moncarz/otherplane/issues"
+  },
+  "author": "Julian Moncarz",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "otherplane": "bin/otherplane.mjs"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "schema",
+    "engine",
+    "CLAUDE.md",
+    "otherplane.config.example.json"
+  ],
+  "scripts": {
+    "otherplane": "node bin/otherplane.mjs",
+    "prepublishOnly": "node bin/otherplane.mjs clean",
+    "setup": "node bin/otherplane.mjs setup",
+    "init": "node bin/otherplane.mjs init",
+    "new": "node bin/otherplane.mjs new",
+    "dev": "node bin/otherplane.mjs dev",
+    "edit": "node bin/otherplane.mjs edit",
+    "check": "node bin/otherplane.mjs check",
+    "build": "node bin/otherplane.mjs build",
+    "serve": "node bin/otherplane.mjs serve",
+    "preview": "node bin/otherplane.mjs preview",
+    "clean": "node bin/otherplane.mjs clean",
+    "lint": "npm --prefix engine run lint"
+  },
+  "license": "MIT"
+}

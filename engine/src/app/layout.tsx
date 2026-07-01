@@ -1,0 +1,45 @@
+import type { Metadata } from "next";
+import { Press_Start_2P } from "next/font/google";
+import "@/styles/globals.css";
+import Providers from "./providers";
+import RoomViewer from "./[room]/RoomViewer";
+import { SITE } from "@/data/site";
+
+// Classic arcade pixel font for diegetic HUD bits (the exit prompt). Exposed as
+// a CSS variable; next/font self-hosts it at build time, so it ships with the
+// static export — no runtime network fetch.
+const retro = Press_Start_2P({
+  variable: "--font-retro",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: SITE.siteTitle,
+  description: "A walkable Gaussian-splat museum.",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className={`${retro.variable} antialiased`}>
+        <Providers moveSpeed={SITE.moveSpeed}>
+          {/* The viewer lives in the ROOT layout — the only layout that persists
+              across navigations between different /<room>/ values (a layout INSIDE
+              the [room] dynamic segment remounts when the param changes, dropping
+              the <Canvas> and with it pointer lock). Mounted once here, the canvas
+              survives every door, so the mouse stays locked. RoomViewer reads the
+              current room from usePathname() and renders nothing off room routes.
+              `children` is the route's page (a null stub for [room]; the redirect
+              for /). */}
+          <RoomViewer />
+          {children}
+        </Providers>
+      </body>
+    </html>
+  );
+}

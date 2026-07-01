@@ -1,0 +1,24 @@
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.title {
+  font-size: var(--size-md);
+  font-weight: 500;
+  color: inherit;
+}
+
+.detail {
+  font-size: var(--size-sm);
+  font-weight: 500;
+  color: inherit;
+}
+
+.spacer {
+  height: 40px;
+  width: 40px;
+}

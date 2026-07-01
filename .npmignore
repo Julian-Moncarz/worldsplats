@@ -1,0 +1,11 @@
+# Keep build artifacts and any mirrored content out of the published tarball.
+# (node_modules is always excluded by npm.)
+engine/.next
+engine/out
+engine/public/rooms
+engine/public/worlds
+engine/public/music
+**/*.tsbuildinfo
+out
+.env
+.env.*

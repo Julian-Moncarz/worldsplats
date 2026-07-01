@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Build output / caches (Next static export, Vite, TS)
+.next/
+out/
+build/
+.vite/
+*.tsbuildinfo
+next-env.d.ts
+
+# Content mirror synced into the engine by the CLI (build artifact).
+engine/public/rooms/
+engine/public/worlds/
+engine/public/music/
+
+# This repo ships the ENGINE/TOOL only. A user's museum content — their rooms,
+# splats, colliders, music, Marble provenance, and per-site deploy config — is
+# NOT part of the engine and is ignored by default. Build your own site on top:
+# track these in your own site repo, and host big blobs on object storage (R2/S3;
+# see README). `otherplane init` recreates the dirs + config in a fresh project.
+rooms/
+worlds/
+music/
+generated/
+/otherplane.config.json
+
+# Per-project engine build dir (npx/global installs build here, not in the repo)
+.otherplane/
+
+# Secrets — keep the key out of git (see .env.example)
+.env
+.env.*
+!.env.example
+
+# Editor / OS cruft
+.DS_Store
+*.pem
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Archived worlds — local snapshots, never tracked
+world-archives/
